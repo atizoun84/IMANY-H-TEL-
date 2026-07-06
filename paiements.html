@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestion des Paiements - HotelSmart</title>
+    
+    <meta name="theme-color" content="#075E54">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HotelSmart">
+    <link rel="apple-touch-icon" href="logo maison.png">
+    <link rel="manifest" href="manifest.json">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        whatsapp: {
+                            dark: '#075E54',
+                            teal: '#128C7E',
+                            light: '#25D366',
+                            bg: '#F0F2F5',
+                            card: '#FFFFFF'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Modal style */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 92%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.95) translateY(20px);
+            transition: all 0.3s ease;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #075E54, #128C7E);
+            border-radius: 24px 24px 0 0;
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .modal-close-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-close-btn:hover {
+            background: rgba(255,255,255,0.35);
+            transform: rotate(90deg);
+        }
+        .modal-body {
+            padding: 24px;
+        }
+        .modal-body label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #374151;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .modal-body input, .modal-body select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: border 0.2s;
+            background: #f9fafb;
+        }
+        .modal-body input:focus, .modal-body select:focus {
+            border-color: #128C7E;
+            outline: none;
+            background: white;
+        }
+        .modal-body .form-group {
+            margin-bottom: 16px;
+        }
+        .modal-footer {
+            padding: 16px 24px 24px;
+            border-top: 1px solid #f3f4f6;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .btn-auxiliary {
+            background: linear-gradient(135deg, #128C7E, #075E54);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-auxiliary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(18, 140, 126, 0.3);
+        }
+        .btn-auxiliary-secondary {
+            background: #e5e7eb;
+            color: #374151;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-auxiliary-secondary:hover {
+            background: #d1d5db;
+        }
+        /* Success toast plein écran transparent */
+        .fullscreen-success {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(2px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+        }
+        .fullscreen-success.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .fullscreen-success .success-box {
+            background: white;
+            border-radius: 24px;
+            padding: 40px 50px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: all 0.4s ease;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+        }
+        .fullscreen-success.active .success-box {
+            transform: scale(1);
+        }
+        .fullscreen-success .success-box i {
+            font-size: 48px;
+            color: #10b981;
+            margin-bottom: 12px;
+        }
+        .fullscreen-success .success-box h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .fullscreen-success .success-box p {
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        /* Badge type */
+        .badge-type {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-type.hebergement {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        .badge-type.auxiliaire {
+            background: #fef3c7;
+            color: #b45309;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex justify-center items-center p-0">
+
+    <div class="w-full h-screen bg-whatsapp-bg shadow-2xl overflow-hidden flex flex-col relative border border-gray-200">
+        
+        <div id="sidebarOverlay" class="absolute inset-0 bg-black/50 z-40 hidden transition-opacity duration-300 opacity-0"></div>
+
+        <aside id="sidebarMenu" class="absolute top-0 bottom-0 left-0 w-64 bg-[#222e35] text-gray-300 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-2xl">
+            <div class="p-4 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal text-white flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-hotel text-xl"></i>
+                    <span class="font-bold text-sm tracking-wide">Menu Gestion</span>
+                </div>
+                <button id="closeMenuBtn" class="text-white text-xl focus:outline-none hover:opacity-80">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-none">
+                <a href="index.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-house w-5"></i>
+                    <span class="text-sm">Accueil</span>
+                </a>
+                <a href="contrats.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-bed w-5"></i>
+                    <span class="text-sm">Chambres</span>
+                </a>
+                <a href="contrat_locataires.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-users w-5"></i>
+                    <span class="text-sm">Clients</span>
+                </a>
+                <a href="paiements.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-whatsapp-teal text-white font-medium transition-colors">
+                    <i class="fa-solid fa-money-bill-wave w-5"></i>
+                    <span class="text-sm">Paiements</span>
+                </a>
+                <a href="comptabilite.html" id="nav-comptabilite" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-calculator w-5"></i>
+                    <span class="text-sm">Comptabilité</span>
+                </a>
+                <a href="recherche.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-magnifying-glass w-5"></i>
+                    <span class="text-sm">Recherche</span>
+                </a>
+                <div class="border-t border-gray-700/60 my-4"></div>
+                <a href="config.html" id="nav-config" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-gear w-5"></i>
+                    <span class="text-sm">Configuration PMS</span>
+                </a>
+                <a href="#" onclick="logout()" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-red-900/30 text-amber-500 transition-colors">
+                    <i class="fa-solid fa-sign-out-alt w-5"></i>
+                    <span class="text-sm">Quitter</span>
+                </a>
+            </nav>
+            <div class="p-4 border-t border-gray-700/60 text-xs text-gray-500 text-center" id="sidebar-user-info">
+                v1.2.0 - PWA Connect
+            </div>
+        </aside>
+
+        <header class="sticky top-0 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal px-4 pt-4 pb-3 flex justify-between items-center shadow-md z-30 shrink-0">
+            <button id="openMenuBtn" class="text-white text-xl focus:outline-none"><i class="fa-solid fa-bars"></i></button>
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <span id="header-name-display">HotelSmart</span>
+                <span id="network-status-toast" class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">Initialisation...</span>
+            </h1>
+            <div class="flex items-center">
+                <img src="logo maison.png" alt="Logo" id="header-logo-display" class="w-10 h-10 object-contain rounded-full border border-white/20 bg-white/10 p-0.5" onerror="this.style.display='none';">
+            </div>
+        </header>
+
+        <button id="pwa-install-btn" class="fixed bottom-20 left-4 z-40 bg-[#128C7E] hover:bg-[#075E54] text-white font-bold text-xs py-2.5 px-4 rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 hidden items-center gap-2">
+            <i class="fa-solid fa-download"></i> Installer l'application
+        </button>
+
+        <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-12">
+            
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900 flex items-center gap-1">
+                        Enregistrement des Règlements 💵
+                    </h2>
+                    <p class="text-xs text-gray-500 font-medium mt-0.5">Facturation des nuitées, consommations et extras</p>
+                </div>
+                <button onclick="openAuxiliaryModal()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-coins"></i> Revenus auxiliaires
+                </button>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm space-y-4 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-gray-700">Chambre concernée</label>
+                        <select id="payment-room-select" onchange="handleRoomSelectionChange()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                            <option value="">-- Sélectionner une chambre occupée --</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-gray-700">Nom du Client</label>
+                        <input type="text" id="payment-client-name" readonly class="w-full bg-gray-100 border border-gray-200 rounded-xl px-3 py-2 text-lg font-black text-whatsapp-teal focus:outline-none cursor-not-allowed">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t pt-3">
+                    <div class="space-y-1.5 sm:col-span-1">
+                        <label class="block font-bold text-gray-700">Civilité du Payeur</label>
+                        <select id="payment-payer-gender" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                            <option value="M.">M.</option>
+                            <option value="Mme">Mme</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1.5 sm:col-span-2">
+                        <label class="block font-bold text-gray-700">Nom du Payeur</label>
+                        <input type="text" id="payment-payer-name" placeholder="Nom complet du payeur" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 font-bold text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                    </div>
+                </div>
+
+                <div id="invoice-details-box" class="bg-slate-50 border border-gray-200/60 rounded-xl p-3 space-y-2 hidden">
+                    <p class="font-bold text-gray-800 border-b pb-1">Détails de la facture en cours</p>
+                    
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 py-1">
+                        <label for="departure-date-select" class="font-bold text-gray-700 text-xs">Date de départ réelle :</label>
+                        <input type="date" id="departure-date-select" onchange="handleRoomSelectionChange()" class="w-full sm:w-auto bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                        <span class="text-[10px] text-gray-400 italic">(Ajuste le nombre de nuits)</span>
+                    </div>
+                    
+                    <div id="invoice-items-list" class="space-y-1.5 text-[11px]">
+                        </div>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-2 border-t border-gray-200 gap-1">
+                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">MONTANT RESTANT À PAYER :</span>
+                        <span id="invoice-total-amount" class="text-xl sm:text-2xl font-black text-red-600 tracking-tight">0 CFA</span>
+                    </div>
+                </div>
+
+                <div class="border-t pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-gray-700">Mode de règlement</label>
+                        <select id="payment-method" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                            <option value="Espèces">Espèces</option>
+                            <option value="Mobile Money">Mobile Money (MTN / Moov)</option>
+                            <option value="Carte Bancaire">Carte Bancaire</option>
+                            <option value="Virement">Virement Bancaire</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-gray-700">Montant versé (CFA)</label>
+                        <input type="number" id="payment-amount-input" placeholder="Ex: 25000" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 font-bold text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+                    <button id="cancel-selection-btn" onclick="clearFormSelection()" class="w-full sm:w-auto bg-gray-200 text-gray-700 font-bold px-5 py-3 rounded-xl hover:bg-gray-300 transition flex items-center justify-center gap-2 hidden">
+                        <i class="fa-solid fa-xmark"></i> Annuler la sélection
+                    </button>
+                    <button onclick="processPaymentSubmit()" class="w-full sm:w-auto bg-whatsapp-teal text-white font-bold px-6 py-3 rounded-xl shadow hover:bg-whatsapp-dark transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-receipt"></i> Valider le Paiement
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-sm font-bold text-gray-800 flex items-center gap-1">
+                    <i class="fa-solid fa-clock-rotate-left text-whatsapp-teal"></i> Historique des encaissements récents
+                </h3>
+                <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-100 text-gray-500 font-bold">
+                                    <th class="p-3">Date & Heure</th>
+                                    <th class="p-3">Type</th>
+                                    <th class="p-3">Référence</th>
+                                    <th class="p-3">Client/Payeur</th>
+                                    <th class="p-3">Mode</th>
+                                    <th class="p-3 text-right">Montant</th>
+                                    <th class="p-3 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payments-history-rows" class="divide-y divide-gray-100 text-gray-700">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="bg-white text-gray-500 text-center py-4 border-t border-gray-200 text-xs mt-auto space-y-1 shrink-0">
+            <p class="font-bold text-gray-800">HotelSmart <span class="text-whatsapp-teal">Agencies</span></p>
+            <p class="text-[10px] opacity-60">&copy; 2026 - Tous droits réservés.</p>
+        </footer>
+
+    </div>
+
+    <!-- MODALE REVENUS AUXILIAIRES -->
+    <div id="auxiliaryModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-coins"></i> Revenus auxiliaires</h2>
+                <button class="modal-close-btn" onclick="closeAuxiliaryModal()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Désignation *</label>
+                    <input type="text" id="aux-designation" placeholder="Ex: Vente de boisson, Service extra, ...">
+                </div>
+                <div class="form-group">
+                    <label>Montant (CFA) *</label>
+                    <input type="number" id="aux-amount" placeholder="Ex: 15000">
+                </div>
+                <div class="form-group">
+                    <label>Client / Payeur *</label>
+                    <input type="text" id="aux-client" placeholder="Nom du client ou payeur">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="aux-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Heure</label>
+                        <input type="time" id="aux-time">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Mode de paiement</label>
+                    <select id="aux-method" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                        <option value="Espèces">Espèces</option>
+                        <option value="Mobile Money">Mobile Money (MTN / Moov)</option>
+                        <option value="Carte Bancaire">Carte Bancaire</option>
+                        <option value="Virement">Virement Bancaire</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-auxiliary-secondary" onclick="closeAuxiliaryModal()">Annuler</button>
+                <button class="btn-auxiliary" onclick="processAuxiliaryPayment()">
+                    <i class="fa-solid fa-plus-circle"></i> Ajouter le paiement
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUCCESS TOAST PLEIN ÉCRAN -->
+    <div id="fullscreenSuccess" class="fullscreen-success">
+        <div class="success-box">
+            <i class="fa-solid fa-circle-check"></i>
+            <h3>Paiement enregistré !</h3>
+            <p>Opération synchronisée avec le cloud.</p>
+        </div>
+    </div>
+
+    <!-- Configuration SDK Firebase en Modules -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update, push, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmlcMYeoeo4ESVWgzTC2zdq4lheqwbOyc",
+            authDomain: "imany-hotel.firebaseapp.com",
+            databaseURL: "https://imany-hotel-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "imany-hotel",
+            storageBucket: "imany-hotel.firebasestorage.app",
+            messagingSenderId: "941252716027",
+            appId: "1:941252716027:web:63b91f87c4f3fc7f07975e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.FirebaseBridge = {
+            db: db,
+            roomsRef: ref(db, 'rooms'),
+            paymentsRef: ref(db, 'payments'),
+            
+            syncAllRooms: function(roomsData) {
+                return set(ref(this.db, 'rooms'), roomsData);
+            },
+            updateRoom: function(roomId, roomData) {
+                return update(ref(this.db, `rooms/${roomId}`), roomData);
+            },
+            addPayment: function(paymentData) {
+                return push(ref(this.db, 'payments'), paymentData);
+            },
+            deletePayment: function(paymentId) {
+                return remove(ref(this.db, `payments/${paymentId}`));
+            }
+        };
+
+        const connectedRef = ref(db, ".info/connected");
+        onValue(connectedRef, (snap) => {
+            if (snap.val() === true) {
+                window.updateNetworkToast("online");
+            } else {
+                window.updateNetworkToast("offline");
+            }
+        });
+
+        onValue(ref(db, 'company_data'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                if (data.masterCode) {
+                    window.masterCode = data.masterCode;
+                    if(!window.userSecurityCode) window.userSecurityCode = data.masterCode;
+                }
+                if (data.company) {
+                    window.hotelCompanyData = data.company;
+                    if (data.company.name) {
+                        document.getElementById('header-name-display').innerText = data.company.name;
+                    }
+                }
+            }
+        });
+
+        onValue(ref(db, 'drinks'), (snapshot) => {
+            const data = snapshot.val();
+            window.configuredDrinks = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+        });
+
+        onValue(ref(db, 'menus'), (snapshot) => {
+            const data = snapshot.val();
+            window.configuredMenus = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+        });
+
+        onValue(window.FirebaseBridge.roomsRef, (snapshot) => {
+            window.updateNetworkToast("syncing");
+            const data = snapshot.val();
+            
+            let fetchedRooms = [];
+            if (data) {
+                fetchedRooms = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                }));
+            }
+            
+            window.rooms = fetchedRooms.map(room => ({
+                status: room.status || 'Disponible',
+                client: room.client || '',
+                arrivalDate: room.arrivalDate || '',
+                arrivalTime: room.arrivalTime || '',
+                meals: room.meals || { pdej: false, dej: false, din: false },
+                mealsDetails: room.mealsDetails || { pdej: { menu: '', price: '' }, dej: { menu: '', price: '' }, din: { menu: '', price: '' } },
+                drinks: room.drinks || [],
+                ...room
+            }));
+            
+            window.populateRoomsSelect();
+            window.updateNetworkToast("online");
+        }, (error) => {
+            console.error("Erreur de synchronisation Firebase :", error);
+            window.updateNetworkToast("offline");
+        });
+
+        onValue(window.FirebaseBridge.paymentsRef, (snapshot) => {
+            window.updateNetworkToast("syncing");
+            const data = snapshot.val();
+            
+            let fetchedPayments = [];
+            if (data) {
+                fetchedPayments = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                }));
+            }
+            
+            window.paymentsLog = fetchedPayments.sort((a, b) => {
+                return new Date(b.date) - new Date(a.date);
+            });
+            
+            window.renderPaymentsHistory();
+            window.updateNetworkToast("online");
+        }, (error) => {
+            console.error("Erreur de synchronisation des paiements :", error);
+            window.updateNetworkToast("offline");
+        });
+    </script>
+
+    <script>
+        // Logique de la Sidebar Navigation
+        const openMenuBtn = document.getElementById('openMenuBtn');
+        const closeMenuBtn = document.getElementById('closeMenuBtn');
+        const sidebarMenu = document.getElementById('sidebarMenu');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function openMenu() {
+            sidebarOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                sidebarOverlay.classList.remove('opacity-0');
+                sidebarOverlay.classList.add('opacity-100');
+                sidebarMenu.classList.remove('-translate-x-full');
+            }, 10);
+        }
+
+        function closeMenu() {
+            sidebarMenu.classList.add('-translate-x-full');
+            sidebarOverlay.classList.remove('opacity-100');
+            sidebarOverlay.classList.add('opacity-0');
+            setTimeout(() => {
+                sidebarOverlay.classList.add('hidden');
+            }, 300);
+        }
+
+        openMenuBtn.addEventListener('click', openMenu);
+        closeMenuBtn.addEventListener('click', closeMenu);
+        sidebarOverlay.addEventListener('click', closeMenu);
+
+        // --- Données & Core Logic ---
+        window.rooms = [];
+        window.paymentsLog = [];
+        let globalCalculatedTotal = 0;
+        window.configuredDrinks = [];
+        window.configuredMenus = [];
+        window.userSecurityCode = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGlobalSettings();
+            checkUrlParameters();
+            updateNetworkStatus();
+            loadConnectedUserSession();
+        });
+
+        function loadConnectedUserSession() {
+            const sessionData = sessionStorage.getItem('HOTEL_SMART_auth');
+            if (!sessionData) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            try {
+                const session = JSON.parse(sessionData);
+                window.userSecurityCode = session.code || null;
+                
+                const navComptabilite = document.getElementById('nav-comptabilite');
+                const navConfig = document.getElementById('nav-config');
+                const sidebarUserInfo = document.getElementById('sidebar-user-info');
+                
+                if (sidebarUserInfo && session.user) {
+                    sidebarUserInfo.innerHTML = `
+                        <div class="flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-circle text-[6px] text-emerald-400"></i>
+                            <span class="font-medium">${session.user}</span>
+                        </div>
+                        <div class="text-[10px] opacity-70 mt-0.5">${session.role} • v1.2.0</div>
+                    `;
+                }
+                
+                if (session.role === 'Propriétaire') {
+                    if (navComptabilite) navComptabilite.style.display = 'flex';
+                    if (navConfig) navConfig.style.display = 'flex';
+                } else if (session.role === 'Gérant' || session.role === 'Employé') {
+                    if (navComptabilite) navComptabilite.style.display = 'none';
+                    if (navConfig) navConfig.style.display = 'none';
+                }
+            } catch (e) {
+                sessionStorage.removeItem('HOTEL_SMART_auth');
+                window.location.href = 'login.html';
+            }
+        }
+
+        function loadGlobalSettings() {
+            const companyData = JSON.parse(localStorage.getItem('HOTEL_SMART_company'));
+            if(companyData && companyData.name) {
+                document.getElementById('header-name-display').innerText = companyData.name;
+            }
+        }
+
+        function populateRoomsSelect() {
+            const select = document.getElementById('payment-room-select');
+            select.innerHTML = '<option value="">-- Sélectionner une chambre occupée --</option>';
+            const activeRooms = window.rooms.filter(r => r.status === 'Occupée' || r.status === 'Réservée');
+            
+            activeRooms.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.id;
+                opt.innerText = `Chambre ${r.number} (${r.status}) - ${r.client}`;
+                select.appendChild(opt);
+            });
+        }
+        window.populateRoomsSelect = populateRoomsSelect;
+
+        function checkUrlParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomIdParam = urlParams.get('room_id');
+            
+            if(roomIdParam) {
+                const select = document.getElementById('payment-room-select');
+                select.value = roomIdParam;
+                handleRoomSelectionChange();
+            }
+        }
+
+        function clearFormSelection() {
+            document.getElementById('payment-room-select').value = '';
+            document.getElementById('invoice-details-box').classList.add('hidden');
+            document.getElementById('payment-client-name').value = '';
+            document.getElementById('payment-payer-name').value = '';
+            document.getElementById('payment-payer-gender').value = 'M.';
+            document.getElementById('payment-amount-input').value = '';
+            document.getElementById('cancel-selection-btn').classList.add('hidden');
+            document.getElementById('departure-date-select').value = '';
+            globalCalculatedTotal = 0;
+        }
+        window.clearFormSelection = clearFormSelection;
+
+        function triggerUpdateFromHistory(roomNumber) {
+            const activeRoom = window.rooms.find(r => r.number === roomNumber && (r.status === 'Occupée' || r.status === 'Réservée'));
+            if (activeRoom) {
+                document.getElementById('payment-room-select').value = activeRoom.id;
+                handleRoomSelectionChange();
+                document.getElementById('payment-amount-input').focus();
+            } else {
+                alert("Impossible de mettre à jour : cette chambre n'est plus occupée ou a changé de séjour.");
+            }
+        }
+        window.triggerUpdateFromHistory = triggerUpdateFromHistory;
+
+        function calculateRemainingForRoom(roomNumber, clientName, departureDate) {
+            const room = window.rooms.find(r => r.number === roomNumber && r.client === clientName);
+            if (!room) return 0;
+
+            let totalBrut = 0;
+            let countNights = 1; 
+            
+            if(room.arrivalDate) {
+                const timePart = room.arrivalTime ? room.arrivalTime : "12:00";
+                const arrivalDateTime = new Date(`${room.arrivalDate}T${timePart}`);
+                let endDate = new Date();
+
+                if (departureDate) {
+                    endDate = new Date(departureDate + 'T23:59:59');
+                }
+                
+                const timeDiff = endDate.getTime() - arrivalDateTime.getTime();
+                if(timeDiff > 0) {
+                    const daysCalculated = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                    if(daysCalculated > 0) countNights = daysCalculated;
+                }
+            }
+
+            totalBrut += (parseInt(room.price) || 0) * countNights;
+
+            if(room.mealsDetails) {
+                Object.keys(room.mealsDetails).forEach(key => {
+                    const meal = room.mealsDetails[key];
+                    if(meal && meal.menu && meal.price) {
+                        totalBrut += parseInt(meal.price) || 0;
+                    }
+                });
+            }
+
+            if(room.drinks && room.drinks.length > 0) {
+                room.drinks.forEach(d => {
+                    totalBrut += parseInt(d.price) || 0;
+                });
+            }
+
+            const previousPayments = window.paymentsLog
+                .filter(p => p.roomNumber === roomNumber && p.client === clientName && p.type !== 'auxiliaire')
+                .reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
+
+            const remaining = totalBrut - previousPayments;
+            return remaining > 0 ? remaining : 0;
+        }
+        window.calculateRemainingForRoom = calculateRemainingForRoom;
+
+        function handleRoomSelectionChange() {
+            const select = document.getElementById('payment-room-select');
+            const targetBox = document.getElementById('invoice-details-box');
+            const itemsList = document.getElementById('invoice-items-list');
+            const clientInput = document.getElementById('payment-client-name');
+            const payerInput = document.getElementById('payment-payer-name');
+            const amountInput = document.getElementById('payment-amount-input');
+            const cancelBtn = document.getElementById('cancel-selection-btn');
+            const departureDateInput = document.getElementById('departure-date-select');
+
+            if(!select.value) {
+                clearFormSelection();
+                return;
+            }
+
+            const room = window.rooms.find(r => r.id == select.value);
+            if(!room) return;
+
+            cancelBtn.classList.remove('hidden');
+            clientInput.value = room.client || 'Non spécifié';
+            payerInput.value = room.client || '';
+            
+            if (!departureDateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                departureDateInput.value = today;
+            }
+
+            itemsList.innerHTML = '';
+            
+            let totalBrut = 0;
+
+            let countNights = 1; 
+            if(room.arrivalDate) {
+                const timePart = room.arrivalTime ? room.arrivalTime : "12:00";
+                const arrivalDateTime = new Date(`${room.arrivalDate}T${timePart}`);
+                let endDate = new Date();
+
+                if (departureDateInput.value) {
+                    endDate = new Date(departureDateInput.value + 'T23:59:59');
+                }
+                
+                const timeDiff = endDate.getTime() - arrivalDateTime.getTime();
+                if(timeDiff > 0) {
+                    const daysCalculated = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                    if(daysCalculated > 0) countNights = daysCalculated;
+                }
+            }
+
+            const baseRoomPrice = parseInt(room.price) || 0;
+            const computedRoomTotal = baseRoomPrice * countNights;
+            totalBrut += computedRoomTotal;
+            appendInvoiceItem("Base Hébergement", `Chambre N° ${room.number} (${countNights} jour(s) x ${baseRoomPrice.toLocaleString()} CFA)`, computedRoomTotal);
+
+            if(room.mealsDetails) {
+                Object.keys(room.mealsDetails).forEach(key => {
+                    const meal = room.mealsDetails[key];
+                    if(meal && meal.menu && meal.price) {
+                        const price = parseInt(meal.price) || 0;
+                        totalBrut += price;
+                        let labels = { pdej: "Petit-Déjeuner", dej: "Déjeuner", din: "Dîner" };
+                        appendInvoiceItem(`Restauration (${labels[key]})`, meal.menu, price);
+                    }
+                });
+            }
+
+            if(room.drinks && room.drinks.length > 0) {
+                room.drinks.forEach(d => {
+                    const price = parseInt(d.price) || 0;
+                    totalBrut += price;
+                    appendInvoiceItem("Boisson / Commande", d.name, price);
+                });
+            }
+
+            const previousPaymentsAmount = window.paymentsLog
+                .filter(p => p.roomNumber === room.number && p.client === room.client && p.type !== 'auxiliaire')
+                .reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
+
+            if(previousPaymentsAmount > 0) {
+                appendInvoiceItem("Déjà Encaissé (Acomptes successifs)", "Historique des règlements sur ce séjour", -previousPaymentsAmount);
+            }
+
+            globalCalculatedTotal = totalBrut - previousPaymentsAmount;
+            if(globalCalculatedTotal < 0) globalCalculatedTotal = 0;
+
+            document.getElementById('invoice-total-amount').innerText = `${globalCalculatedTotal.toLocaleString()} CFA`;
+            amountInput.value = globalCalculatedTotal; 
+            targetBox.classList.remove('hidden');
+        }
+        window.handleRoomSelectionChange = handleRoomSelectionChange;
+
+        function appendInvoiceItem(category, details, price) {
+            const itemsList = document.getElementById('invoice-items-list');
+            const isNegative = price < 0;
+            const priceClass = isNegative ? "text-emerald-600 font-bold" : "text-gray-800 font-bold";
+            const html = `
+                <div class="flex justify-between items-center text-gray-600 border-b border-gray-100 pb-1">
+                    <span><strong>${category}</strong> — <span class="text-gray-400 font-medium">${details}</span></span>
+                    <span class="${priceClass}">${price.toLocaleString()} CFA</span>
+                </div>
+            `;
+            itemsList.innerHTML += html;
+        }
+
+        function processPaymentSubmit() {
+            const select = document.getElementById('payment-room-select');
+            const amountInput = document.getElementById('payment-amount-input');
+            const methodSelect = document.getElementById('payment-method');
+            const payerInput = document.getElementById('payment-payer-name');
+            const genderSelect = document.getElementById('payment-payer-gender');
+
+            if(!select.value) {
+                alert("Veuillez sélectionner une chambre valide.");
+                return;
+            }
+
+            const amountPaid = parseInt(amountInput.value) || 0;
+            if(amountPaid <= 0) {
+                alert("Le montant versé doit être supérieur à 0 CFA.");
+                return;
+            }
+
+            const payerName = payerInput.value.trim();
+            if(!payerName) {
+                alert("Veuillez renseigner le nom du payeur.");
+                return;
+            }
+
+            const roomIndex = window.rooms.findIndex(r => r.id == select.value);
+            if(roomIndex === -1) return;
+
+            const targetRoom = window.rooms[roomIndex];
+            const fullPayerIdentity = `${genderSelect.value} ${payerName}`;
+
+            const newPayment = {
+                date: new Date().toISOString(),
+                roomNumber: targetRoom.number,
+                client: targetRoom.client,
+                payer: fullPayerIdentity,
+                method: methodSelect.value,
+                amount: amountPaid,
+                type: 'hebergement',
+                designation: `Séjour Chambre ${targetRoom.number}`
+            };
+
+            window.paymentsLog.unshift({
+                id: 'pay_' + Date.now(),
+                ...newPayment
+            });
+
+            if (window.FirebaseBridge) {
+                window.FirebaseBridge.addPayment(newPayment)
+                    .then(() => {
+                        console.log("Paiement enregistré sur Firebase");
+                        window.updateNetworkToast("online");
+                    })
+                    .catch(err => {
+                        console.error("Erreur d'enregistrement Firebase :", err);
+                        window.updateNetworkToast("offline");
+                        localStorage.setItem('HOTEL_SMART_payments', JSON.stringify(window.paymentsLog));
+                    });
+            } else {
+                localStorage.setItem('HOTEL_SMART_payments', JSON.stringify(window.paymentsLog));
+            }
+
+            if(amountPaid >= globalCalculatedTotal) {
+                if(confirm(`💰 Règlement du solde restant effectué par ${fullPayerIdentity} pour la chambre ${targetRoom.number}. Souhaitez-vous libérer la chambre et la basculer en 'Entretien (Ménage)' ?`)) {
+                    const updatedRoom = {
+                        status: 'Entretien',
+                        client: '',
+                        meals: { pdej: false, dej: false, din: false },
+                        mealsDetails: { pdej: { menu: '', price: '' }, dej: { menu: '', price: '' }, din: { menu: '', price: '' } },
+                        drinks: []
+                    };
+                    window.rooms[roomIndex] = { ...window.rooms[roomIndex], ...updatedRoom };
+                    
+                    if (window.FirebaseBridge) {
+                        window.FirebaseBridge.updateRoom(targetRoom.id, updatedRoom)
+                            .catch(err => console.error("Erreur mise à jour chambre :", err));
+                    }
+                }
+            } else {
+                alert(`💵 Paiement partiel de ${amountPaid.toLocaleString()} CFA par ${fullPayerIdentity} enregistré. Le reste à payer est mis à jour.`);
+            }
+
+            showFullscreenSuccess("Paiement hébergement enregistré !");
+            clearFormSelection();
+            populateRoomsSelect();
+            renderPaymentsHistory();
+        }
+        window.processPaymentSubmit = processPaymentSubmit;
+
+        // ---- REVENUS AUXILIAIRES ----
+        function openAuxiliaryModal() {
+            const modal = document.getElementById('auxiliaryModal');
+            modal.classList.add('active');
+            document.getElementById('aux-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('aux-time').value = new Date().toTimeString().slice(0,5);
+            document.getElementById('aux-designation').focus();
+        }
+        window.openAuxiliaryModal = openAuxiliaryModal;
+
+        function closeAuxiliaryModal() {
+            document.getElementById('auxiliaryModal').classList.remove('active');
+        }
+        window.closeAuxiliaryModal = closeAuxiliaryModal;
+
+        function processAuxiliaryPayment() {
+            const designation = document.getElementById('aux-designation').value.trim();
+            const amount = parseInt(document.getElementById('aux-amount').value) || 0;
+            const client = document.getElementById('aux-client').value.trim();
+            const date = document.getElementById('aux-date').value;
+            const time = document.getElementById('aux-time').value;
+            const method = document.getElementById('aux-method').value;
+
+            if(!designation) {
+                alert("Veuillez renseigner une désignation.");
+                return;
+            }
+            if(amount <= 0) {
+                alert("Le montant doit être supérieur à 0 CFA.");
+                return;
+            }
+            if(!client) {
+                alert("Veuillez renseigner le nom du client/payeur.");
+                return;
+            }
+            if(!date || !time) {
+                alert("Veuillez renseigner la date et l'heure.");
+                return;
+            }
+
+            const dateTime = new Date(`${date}T${time}`).toISOString();
+
+            const newPayment = {
+                date: dateTime,
+                roomNumber: 'Auxiliaire',
+                client: client,
+                payer: client,
+                method: method,
+                amount: amount,
+                type: 'auxiliaire',
+                designation: designation
+            };
+
+            window.paymentsLog.unshift({
+                id: 'aux_' + Date.now(),
+                ...newPayment
+            });
+
+            if (window.FirebaseBridge) {
+                window.FirebaseBridge.addPayment(newPayment)
+                    .then(() => {
+                        console.log("Paiement auxiliaire enregistré sur Firebase");
+                        window.updateNetworkToast("online");
+                    })
+                    .catch(err => {
+                        console.error("Erreur d'enregistrement Firebase :", err);
+                        window.updateNetworkToast("offline");
+                        localStorage.setItem('HOTEL_SMART_payments', JSON.stringify(window.paymentsLog));
+                    });
+            } else {
+                localStorage.setItem('HOTEL_SMART_payments', JSON.stringify(window.paymentsLog));
+            }
+
+            closeAuxiliaryModal();
+            showFullscreenSuccess("Paiement auxiliaire enregistré !");
+            renderPaymentsHistory();
+
+            document.getElementById('aux-designation').value = '';
+            document.getElementById('aux-amount').value = '';
+            document.getElementById('aux-client').value = '';
+        }
+        window.processAuxiliaryPayment = processAuxiliaryPayment;
+
+        // ---- SUCCESS FULLSCREEN ----
+        function showFullscreenSuccess(message) {
+            const overlay = document.getElementById('fullscreenSuccess');
+            const textP = overlay.querySelector('p');
+            if (textP) textP.textContent = message || "Opération synchronisée avec le cloud.";
+            overlay.classList.add('active');
+            setTimeout(() => {
+                overlay.classList.remove('active');
+            }, 1500);
+        }
+        window.showFullscreenSuccess = showFullscreenSuccess;
+
+        function deletePayment(paymentId, roomNumber, client) {
+            if (!paymentId) {
+                alert("Identifiant du paiement manquant.");
+                return;
+            }
+
+            const code = prompt("Entrez le code du Gérant ou du Propriétaire pour supprimer ce paiement :");
+            if (String(code) !== String(window.userSecurityCode) && String(code) !== String(window.masterCode)) {
+                alert("Code incorrect. Suppression annulée.");
+                return;
+            }
+
+            if (!confirm(`Confirmer la suppression définitive du paiement pour ${roomNumber} (${client}) ?`)) {
+                return;
+            }
+
+            if (window.FirebaseBridge) {
+                window.FirebaseBridge.deletePayment(paymentId)
+                    .then(() => {
+                        console.log("Paiement supprimé de Firebase");
+                        showFullscreenSuccess("Paiement supprimé !");
+                    })
+                    .catch(err => {
+                        console.error("Erreur suppression Firebase :", err);
+                        alert("Erreur lors de la suppression : " + err.message);
+                    });
+            } else {
+                const index = window.paymentsLog.findIndex(p => p.id === paymentId);
+                if (index !== -1) {
+                    window.paymentsLog.splice(index, 1);
+                    localStorage.setItem('HOTEL_SMART_payments', JSON.stringify(window.paymentsLog));
+                    renderPaymentsHistory();
+                    showFullscreenSuccess("Paiement supprimé localement !");
+                }
+            }
+        }
+        window.deletePayment = deletePayment;
+
+        function renderPaymentsHistory() {
+            const container = document.getElementById('payments-history-rows');
+            if(window.paymentsLog.length === 0) {
+                container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400 italic">Aucun flux financier enregistré aujourd'hui.</td></tr>`;
+                return;
+            }
+
+            container.innerHTML = window.paymentsLog.map(p => {
+                const displayDate = p.date ? new Date(p.date).toLocaleString('fr-FR') : p.date || '--';
+                const isAuxiliary = p.type === 'auxiliaire';
+                const typeBadge = isAuxiliary 
+                    ? `<span class="badge-type auxiliaire">Auxiliaire</span>` 
+                    : `<span class="badge-type hebergement">Hébergement</span>`;
+                
+                const reference = isAuxiliary 
+                    ? p.designation || 'Revenu auxiliaire'
+                    : `Chambre ${p.roomNumber}`;
+
+                const displayClient = p.payer ? `${p.client}` : p.client;
+                
+                let actionButton = '';
+                if (!isAuxiliary) {
+                    const remaining = calculateRemainingForRoom(p.roomNumber, p.client, null);
+                    actionButton = remaining > 0 
+                        ? `<button onclick="triggerUpdateFromHistory('${p.roomNumber}')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-1 px-2 rounded tracking-wide text-[10px] flex items-center gap-1 transition shadow-sm"><i class="fa-solid fa-sync-alt"></i></button>` 
+                        : `<span class="text-emerald-600 font-bold text-[10px]"><i class="fa-solid fa-circle-check"></i></span>`;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-medium text-gray-500 text-[10px]">${displayDate}</td>
+                        <td class="p-3">${typeBadge}</td>
+                        <td class="p-3 font-bold text-gray-800">${reference}</td>
+                        <td class="p-3 text-xs">${displayClient}</td>
+                        <td class="p-3"><span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase">${p.method}</span></td>
+                        <td class="p-3 text-right font-black ${isAuxiliary ? 'text-amber-600' : 'text-whatsapp-teal'}">${parseInt(p.amount).toLocaleString()} CFA</td>
+                        <td class="p-3 text-center">
+                            <div class="flex items-center justify-center gap-1">
+                                ${actionButton}
+                                <button onclick="deletePayment('${p.id}', '${p.roomNumber}', '${p.client}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded tracking-wide text-[10px] transition shadow-sm" title="Supprimer ce paiement">
+                                    <i class="fa-solid fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        window.renderPaymentsHistory = renderPaymentsHistory;
+
+        function updateNetworkToast(status) {
+            const statusToast = document.getElementById('network-status-toast');
+            if (!statusToast) return;
+            
+            if (status === "online" && navigator.onLine) {
+                statusToast.className = "text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold";
+                statusToast.innerText = "Synchronisé";
+            } else if (status === "syncing") {
+                statusToast.className = "text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse";
+                statusToast.innerText = "Synchro en cours...";
+            } else {
+                statusToast.className = "text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-bold";
+                statusToast.innerText = "Hors ligne";
+            }
+        }
+        window.updateNetworkToast = updateNetworkToast;
+
+        function updateNetworkStatus() {
+            updateNetworkToast(navigator.onLine ? "online" : "offline");
+        }
+
+        window.addEventListener('online', () => updateNetworkToast("syncing"));
+        window.addEventListener('offline', () => updateNetworkToast("offline"));
+
+        function logout() {
+            if(confirm("Quitter la session ?")) {
+                sessionStorage.removeItem('HOTEL_SMART_auth');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // PWA Installation
+        let deferredPrompt;
+        const installBtn = document.getElementById('pwa-install-btn');
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker enregistré.', reg.scope))
+                    .catch(err => console.log('Échec Service Worker : ', err));
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (installBtn) {
+                installBtn.style.display = 'flex';
+            }
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        deferredPrompt = null;
+                        installBtn.style.display = 'none';
+                    });
+                }
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            if (installBtn) {
+                installBtn.style.display = 'none';
+            }
+            deferredPrompt = null;
+        });
+
+        // Fermeture modale par clic externe
+        document.getElementById('auxiliaryModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAuxiliaryModal();
+            }
+        });
+    </script>
+</body>
+</html>

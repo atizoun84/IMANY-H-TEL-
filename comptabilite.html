@@ -1,0 +1,2109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comptabilité - HotelSmart</title>
+    
+    <meta name="theme-color" content="#075E54">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HotelSmart">
+    <link rel="apple-touch-icon" href="logo maison.png">
+    
+    <link rel="manifest" href="manifest.json">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        whatsapp: {
+                            dark: '#075E54',
+                            teal: '#128C7E',
+                            light: '#25D366',
+                            bg: '#F0F2F5',
+                            card: '#FFFFFF'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Styles pour la modale d'audit */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeInModal 0.3s ease;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            max-width: 95vw;
+            max-height: 92vh;
+            width: 1200px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            animation: slideUpModal 0.3s ease;
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #075E54, #128C7E);
+            color: white;
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .modal-header h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .modal-header .close-modal {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-header .close-modal:hover {
+            background: rgba(255,255,255,0.35);
+            transform: rotate(90deg);
+        }
+        .modal-body {
+            padding: 20px 28px;
+            overflow-y: auto;
+            flex: 1;
+            background: #f8fafc;
+        }
+        .modal-footer {
+            padding: 16px 28px;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .modal-footer button {
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-print {
+            background: #1a202c;
+            color: white;
+        }
+        .btn-print:hover {
+            background: #2d3748;
+            transform: scale(1.02);
+        }
+        .btn-close-modal {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        .btn-close-modal:hover {
+            background: #cbd5e0;
+        }
+        .audit-period-selector {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: white;
+            padding: 14px 20px;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .audit-period-selector label {
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .audit-period-selector input[type="date"] {
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e0;
+            font-size: 0.85rem;
+            background: #f7fafc;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .audit-period-selector input[type="date"]:focus {
+            border-color: #128C7E;
+            box-shadow: 0 0 0 3px rgba(18, 140, 126, 0.15);
+        }
+        .audit-period-selector .btn-audit-go {
+            background: #128C7E;
+            color: white;
+            padding: 8px 24px;
+            border-radius: 10px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+        .audit-period-selector .btn-audit-go:hover {
+            background: #075E54;
+            transform: scale(1.02);
+        }
+        .audit-report-header {
+            text-align: center;
+            padding: 10px 0 16px 0;
+            border-bottom: 3px double #128C7E;
+            margin-bottom: 18px;
+        }
+        .audit-report-header .hotel-name {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #075E54;
+            letter-spacing: 1px;
+        }
+        .audit-report-header .report-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-top: 4px;
+        }
+        .audit-report-header .period-info {
+            font-size: 0.9rem;
+            color: #4a5568;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            margin-top: 6px;
+        }
+        .audit-table th {
+            background: #edf2f7;
+            color: #2d3748;
+            font-weight: 700;
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 2px solid #cbd5e0;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .audit-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+        .audit-table tr:hover {
+            background: #f0fff4;
+        }
+        .audit-summary {
+            margin-top: 20px;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 18px 22px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .audit-summary .summary-item {
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: #f7fafc;
+            border-left: 4px solid #128C7E;
+        }
+        .audit-summary .summary-item .label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #718096;
+            letter-spacing: 0.5px;
+        }
+        .audit-summary .summary-item .value {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #2d3748;
+            margin-top: 2px;
+        }
+        .audit-signatures {
+            margin-top: 24px;
+            display: flex;
+            justify-content: space-between;
+            padding: 16px 20px 8px 20px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.8rem;
+        }
+        .audit-signatures .sig-block {
+            text-align: center;
+            min-width: 150px;
+        }
+        .audit-signatures .sig-block .sig-line {
+            border-top: 1px solid #a0aec0;
+            width: 180px;
+            margin: 30px auto 4px auto;
+        }
+        @keyframes fadeInModal {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUpModal {
+            from { transform: translateY(30px) scale(0.96); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        /* Styles d'impression professionnelle */
+        #printArea {
+            display: none;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printArea, #printArea * {
+                visibility: visible;
+            }
+            #printArea {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                background: white;
+                padding: 20px;
+                font-size: 10pt;
+                font-family: 'Helvetica Neue', Arial, sans-serif;
+                color: #222;
+            }
+            #printArea table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 9pt;
+            }
+            #printArea table th {
+                background: #f0f0f0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                padding: 6px 8px;
+                text-align: left;
+                border: 1px solid #ccc;
+                font-weight: 700;
+            }
+            #printArea table td {
+                padding: 5px 8px;
+                border: 1px solid #ddd;
+            }
+            #printArea .audit-report-header {
+                text-align: center;
+                border-bottom: 2px solid #128C7E;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+            }
+            #printArea .audit-report-header .hotel-name {
+                font-size: 18pt;
+                font-weight: 800;
+                color: #075E54;
+            }
+            #printArea .audit-report-header .report-title {
+                font-size: 14pt;
+                font-weight: 600;
+                color: #2d3748;
+            }
+            #printArea .audit-report-header .period-info {
+                font-size: 10pt;
+                color: #4a5568;
+            }
+            #printArea .audit-summary {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 8px;
+                margin-top: 15px;
+                background: #f7fafc;
+                padding: 12px 16px;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+            }
+            #printArea .audit-summary .summary-item {
+                padding: 6px 10px;
+                background: white;
+                border-left: 4px solid #128C7E;
+                border-radius: 4px;
+            }
+            #printArea .audit-summary .summary-item .label {
+                font-size: 7pt;
+                text-transform: uppercase;
+                font-weight: 700;
+                color: #718096;
+            }
+            #printArea .audit-summary .summary-item .value {
+                font-size: 11pt;
+                font-weight: 800;
+                color: #2d3748;
+            }
+            #printArea .audit-signatures {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 20px;
+                padding-top: 15px;
+                border-top: 1px solid #e2e8f0;
+            }
+            #printArea .audit-signatures .sig-block {
+                text-align: center;
+                min-width: 120px;
+            }
+            #printArea .audit-signatures .sig-block .sig-line {
+                border-top: 1px solid #a0aec0;
+                width: 140px;
+                margin: 25px auto 4px auto;
+            }
+            #printArea .expense-detail-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 6px;
+                margin-top: 10px;
+                background: #f7fafc;
+                padding: 10px 14px;
+                border-radius: 8px;
+                border: 1px solid #e2e8f0;
+            }
+            .modal-overlay, .modal-content, .modal-header, .modal-footer, .modal-body, .audit-period-selector {
+                visibility: hidden !important;
+            }
+        }
+        /* Plaquette Revenus Auxiliaires */
+        .auxiliary-card {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            border: 1px solid #fcd34d;
+        }
+        .auxiliary-card .aux-title {
+            color: #92400e;
+        }
+        .badge-aux {
+            background: #f59e0b;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-hebergement {
+            background: #3b82f6;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex justify-center items-center p-0 md:p-0">
+
+    <div class="w-full max-w-md md:max-w-full bg-whatsapp-bg h-screen sm:rounded-3xl md:rounded-none sm:shadow-2xl overflow-hidden flex flex-col relative border border-gray-200">
+        
+        <div id="sidebarOverlay" class="absolute inset-0 bg-black/50 z-40 hidden transition-opacity duration-300 opacity-0 sm:rounded-3xl md:rounded-none"></div>
+
+        <aside id="sidebarMenu" class="absolute top-0 bottom-0 left-0 w-64 bg-[#222e35] text-gray-300 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col sm:rounded-l-3xl md:rounded-none shadow-2xl">
+            <div class="p-4 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal text-white flex justify-between items-center sm:rounded-tl-3xl md:rounded-none">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-hotel text-xl"></i>
+                    <span class="font-bold text-sm tracking-wide">Menu Gestion</span>
+                </div>
+                <button id="closeMenuBtn" class="text-white text-xl focus:outline-none hover:opacity-80">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <nav id="nav-container" class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-none">
+                <a href="index.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-house w-5"></i>
+                    <span class="text-sm">Accueil</span>
+                </a>
+                <a href="contrats.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-bed w-5"></i>
+                    <span class="text-sm">Chambres</span>
+                </a>
+                <a href="contrat_locataires.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-users w-5"></i>
+                    <span class="text-sm">Clients</span>
+                </a>
+                <a href="paiements.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-money-bill-wave w-5"></i>
+                    <span class="text-sm">Paiements</span>
+                </a>
+                <a href="comptabilite.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-whatsapp-teal text-white font-medium transition-colors">
+                    <i class="fa-solid fa-calculator w-5"></i>
+                    <span class="text-sm">Comptabilité</span>
+                </a>
+                <a href="recherche.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-magnifying-glass w-5"></i>
+                    <span class="text-sm">Recherche</span>
+                </a>
+                <div class="border-t border-gray-700/60 my-4"></div>
+                <a href="config.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-gear w-5"></i>
+                    <span class="text-sm">Configuration PMS</span>
+                </a>
+                <a href="#" onclick="logout()" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-red-900/30 text-amber-500 transition-colors">
+                    <i class="fa-solid fa-sign-out-alt w-5"></i>
+                    <span class="text-sm">Quitter</span>
+                </a>
+            </nav>
+            <!-- Zone d'affichage du nom de l'utilisateur connecté -->
+            <div id="user-footer-display" class="p-2 border-t border-gray-700/40 text-xs text-whatsapp-light font-medium text-center bg-slate-800/30">
+                Chargement utilisateur...
+            </div>
+            <div class="p-2 text-[10px] text-gray-500 text-center">
+                v1.2.0 - PWA Connect
+            </div>
+        </aside>
+
+        <header class="sticky top-0 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal px-4 pt-4 pb-3 flex justify-between items-center shadow-md z-30 sm:rounded-t-3xl md:rounded-none shrink-0">
+            <button id="openMenuBtn" class="text-white text-xl focus:outline-none"><i class="fa-solid fa-bars"></i></button>
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <span id="header-name-display">HotelSmart</span>
+                <span id="network-status-toast" class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">Synchronisation...</span>
+            </h1>
+            <div class="flex items-center">
+                <img src="logo maison.png" alt="Logo" id="header-logo-display" class="w-10 h-10 object-contain rounded-full border border-white/20 bg-white/10 p-0.5" onerror="this.style.display='none';">
+            </div>
+        </header>
+
+        <button id="pwa-install-btn" class="fixed bottom-20 left-4 z-50 bg-whatsapp-teal text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-2xl items-center gap-2 border border-white/20 hover:bg-whatsapp-dark transition-all duration-300 hidden">
+            <i class="fa-solid fa-download"></i> Installer l'application
+        </button>
+
+        <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-12">
+            
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900 flex items-center gap-1">
+                        Tableau de Bord Comptable 📊
+                    </h2>
+                    <p class="text-xs text-gray-500 font-medium mt-0.5">Suivi des flux réels, dépenses, salaires et bénéfices</p>
+                </div>
+                <div class="flex gap-2 mt-2 sm:mt-0">
+                    <button onclick="openAuditModal()" class="bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow hover:bg-indigo-700 transition flex items-center gap-2">
+                        <i class="fa-solid fa-file-lines"></i> Audit Comptable
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                    <div class="bg-white p-3 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between">
+                        <span class="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Total Encaissé</span>
+                        <span id="kpi-total-revenues" class="text-base sm:text-lg font-black text-whatsapp-teal mt-1">0 CFA</span>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between">
+                        <span class="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Total Dépenses</span>
+                        <span id="kpi-total-expenses" class="text-base sm:text-lg font-black text-red-600 mt-1">0 CFA</span>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between">
+                        <span class="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Bénéfice Net Global</span>
+                        <span id="kpi-net-profit" class="text-base sm:text-lg font-black text-blue-600 mt-1">0 CFA</span>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between">
+                        <span class="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Trésorerie Actuelle</span>
+                        <span id="kpi-cash-position" class="text-base sm:text-lg font-black text-purple-600 mt-1">0 CFA</span>
+                    </div>
+                </div>
+
+                <!-- Plaquette Revenus Auxiliaires vs Hébergement -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="bg-white p-3.5 rounded-2xl border border-l-4 border-l-blue-500 border-gray-200/80 shadow-sm space-y-2">
+                        <span class="text-blue-700 font-black uppercase tracking-wider text-[10px] flex items-center gap-1">
+                            <i class="fa-solid fa-bed"></i> Revenus Hébergement
+                        </span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-500">Total encaissé :</span>
+                            <span id="kpi-hebergement-revenues" class="font-black text-blue-600">0 CFA</span>
+                        </div>
+                        <div class="flex justify-between items-center border-t pt-1 border-gray-100">
+                            <span class="text-gray-500">Dettes à recouvrer :</span>
+                            <span id="kpi-hebergement-debt" class="font-black text-red-500">0 CFA</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-2xl border border-l-4 border-l-amber-500 border-gray-200/80 shadow-sm space-y-2 auxiliary-card">
+                        <span class="text-amber-700 font-black uppercase tracking-wider text-[10px] flex items-center gap-1">
+                            <i class="fa-solid fa-coins"></i> Revenus Auxiliaires
+                        </span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-500">Total encaissé :</span>
+                            <span id="kpi-auxiliary-revenues" class="font-black text-amber-600">0 CFA</span>
+                        </div>
+                        <div class="flex justify-between items-center border-t pt-1 border-gray-100">
+                            <span class="text-gray-500">Nombre de transactions :</span>
+                            <span id="kpi-auxiliary-count" class="font-black text-gray-700">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nouvelle Plaquette d'affichage des Dettes Restantes par Secteur -->
+                <div class="bg-white p-3.5 rounded-2xl border border-l-4 border-l-red-500 border-gray-200/80 shadow-sm space-y-2.5 text-xs">
+                    <span class="text-red-700 font-black uppercase tracking-wider text-[10px] flex items-center gap-1">
+                        <i class="fa-solid fa-triangle-exclamation animate-pulse"></i> Dettes clients sur chambres occupées & consommations
+                    </span>
+                    <div class="grid grid-cols-3 gap-2 text-center pt-0.5">
+                        <div class="bg-gray-50 p-2 rounded-xl border border-gray-100">
+                            <span class="block text-[10px] text-gray-400 font-bold uppercase">Dette Chambres</span>
+                            <span id="kpi-debt-rooms" class="text-xs sm:text-sm font-black text-gray-900">0 CFA</span>
+                        </div>
+                        <div class="bg-gray-50 p-2 rounded-xl border border-gray-100">
+                            <span class="block text-[10px] text-gray-400 font-bold uppercase">Dette Restau</span>
+                            <span id="kpi-debt-menu" class="text-xs sm:text-sm font-black text-gray-900">0 CFA</span>
+                        </div>
+                        <div class="bg-gray-50 p-2 rounded-xl border border-gray-100">
+                            <span class="block text-[10px] text-gray-400 font-bold uppercase">Dette Boissons</span>
+                            <span id="kpi-debt-drinks" class="text-xs sm:text-sm font-black text-gray-900">0 CFA</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center border-t pt-1.5 border-gray-100 bg-red-50/40 px-2 py-1 rounded-lg">
+                        <span class="text-red-950 font-bold text-[11px]">Total Arriérés à Recouvrer :</span>
+                        <span id="kpi-debt-total" class="font-black text-red-600 text-xs sm:text-sm">0 CFA</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                    <div class="bg-white p-3 rounded-2xl border border-l-4 border-l-emerald-500 border-gray-200/80 shadow-sm space-y-2">
+                        <span class="text-emerald-700 font-bold uppercase tracking-wider text-[10px] flex items-center gap-1">
+                            <i class="fa-solid fa-bed"></i> Secteur Chambres
+                        </span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-500">Revenu :</span>
+                            <span id="kpi-room-revenues" class="font-bold text-gray-900">0 CFA</span>
+                        </div>
+                        <div class="flex justify-between items-center border-t pt-1 border-gray-100">
+                            <span class="text-gray-500">Bénéfice (Net) :</span>
+                            <span id="kpi-room-profit" class="font-black text-whatsapp-teal">0 CFA</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl border border-l-4 border-l-amber-500 border-gray-200/80 shadow-sm space-y-2">
+                        <span class="text-amber-700 font-bold uppercase tracking-wider text-[10px] flex items-center gap-1">
+                            <i class="fa-solid fa-utensils"></i> Secteur Menus
+                        </span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-500">Revenu :</span>
+                            <span id="kpi-menu-revenues" class="font-bold text-gray-900">0 CFA</span>
+                        </div>
+                        <div class="flex justify-between items-center border-t pt-1 border-gray-100">
+                            <span class="text-gray-500">Bénéfice Réglé :</span>
+                            <span id="kpi-menu-profit" class="font-black text-blue-600">0 CFA</span>
+                        </div>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl border border-l-4 border-l-purple-500 border-gray-200/80 shadow-sm space-y-2">
+                        <span class="text-purple-700 font-bold uppercase tracking-wider text-[10px] flex items-center gap-1">
+                            <i class="fa-solid fa-wine-glass"></i> Secteur Boissons
+                        </span>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-500">Revenu :</span>
+                            <span id="kpi-drink-revenues" class="font-bold text-gray-900">0 CFA</span>
+                        </div>
+                        <div class="flex justify-between items-center border-t pt-1 border-gray-100">
+                            <span class="text-gray-500">Bénéfice :</span>
+                            <span id="kpi-drink-profit" class="font-bold text-purple-600">0 CFA</span>
+                        </div>
+                        <div class="flex justify-between items-center border-t pt-1 border-gray-100 bg-purple-50/50 p-1 rounded">
+                            <span class="text-gray-500 font-medium">Capital Boisson :</span>
+                            <span id="kpi-drink-capital" class="font-black text-gray-700">0 CFA</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm space-y-4 text-xs">
+                <p class="font-bold text-gray-800 border-b pb-1 flex items-center justify-between gap-1">
+                    <span class="flex items-center gap-1">
+                        <i class="fa-solid fa-money-bill-transfer text-red-500"></i> Enregistrer un Décaissement (Sortie de caisse sécurisée)
+                    </span>
+                    <span id="expense-type-indicator" class="text-whatsapp-teal font-black text-[11px] bg-slate-50 px-2.5 py-1 rounded-full border border-gray-100"></span>
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-gray-700">Type de mouvement</label>
+                        <select id="expense-type" onchange="updateExpenseTypeIndicator()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                            <option value="Dépense Exploitation">Dépense Exploitation (Achats, Restau, etc.)</option>
+                            <option value="Paiement Salaire">Paiement de Salaire</option>
+                            <option value="Retrait Bénéfice Chambres">Retrait sur Bénéfice Chambres</option>
+                            <option value="Retrait Bénéfice Menus">Retrait sur Bénéfice Menus</option>
+                            <option value="Retrait Bénéfice Boissons">Retrait sur Bénéfice Boissons</option>
+                            <option value="Retrait Capital Boissons">Retrait sur Capital Boissons</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-gray-700">Montant (CFA)</label>
+                        <input type="number" id="expense-amount" placeholder="Ex: 50000" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 font-bold text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-gray-700">Catégorie Bénéficiaire / Motif</label>
+                        <select id="expense-reason-category" onchange="toggleReasonInputView()" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                            <option value="Autre">Autre motif ou bénéficiaire d'exploitation</option>
+                            <option value="Salaire">Versement Salaire Personnel</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 pt-1">
+                    <div id="reason-custom-box" class="space-y-1.5">
+                        <label class="block font-bold text-gray-700">Précision du Motif / Bénéficiaire</label>
+                        <input type="text" id="expense-reason" placeholder="Ex: Achat vivres, Réparation plomberie..." class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                    </div>
+
+                    <div id="reason-salary-box" class="space-y-1.5 hidden bg-slate-50 border border-gray-100 p-3 rounded-xl">
+                        <label class="block font-bold text-gray-700 mb-1">Sélection du Salarié & Solde Dû</label>
+                        <select id="expense-salary-employee" onchange="syncEmployeeSalaryFields()" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                        </select>
+                    </div>
+                </div>
+
+                <div id="salary-actions-container" class="hidden flex flex-wrap gap-2 pt-1 border-t border-dashed border-gray-200">
+                    <button onclick="downloadSalarySlip()" class="bg-gray-800 text-white font-bold px-4 py-2 rounded-xl shadow hover:bg-black transition flex items-center gap-2">
+                        <i class="fa-solid fa-file-invoice-dollar"></i> Télécharger Bulletin Pro
+                    </button>
+                    <button onclick="copySalaryToWhatsApp()" class="bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl shadow hover:bg-emerald-700 transition flex items-center gap-2">
+                        <i class="fa-brands fa-whatsapp"></i> Copier pour WhatsApp
+                    </button>
+                </div>
+
+                <div class="flex justify-end pt-1">
+                    <button onclick="submitExpense()" class="w-full sm:w-auto bg-red-600 text-white font-bold px-6 py-3 rounded-xl shadow hover:bg-red-700 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-hand-holding-dollar"></i> Valider le Décaissement
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-gray-800 flex items-center gap-1">
+                        <i class="fa-solid fa-list-check text-whatsapp-teal"></i> Flux Financiers Globaux (Entrées / Sorties)
+                    </h3>
+                    <button onclick="deleteSelectedExpense()" class="text-red-500 text-xs font-bold hover:text-red-700 transition flex items-center gap-1">
+                        <i class="fa-solid fa-trash-can"></i> Supprimer une ligne
+                    </button>
+                </div>
+                <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-100 text-gray-500 font-bold">
+                                    <th class="p-3 w-8"><input type="checkbox" id="select-all-ledger" onchange="toggleAllLedgerCheckboxes()"></th>
+                                    <th class="p-3">Date</th>
+                                    <th class="p-3">Type</th>
+                                    <th class="p-3">Opération / Détails</th>
+                                    <th class="p-3 text-right">Entrée (CFA)</th>
+                                    <th class="p-3 text-right">Sortie (CFA)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accounting-ledger-rows" class="divide-y divide-gray-100 text-gray-700">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="bg-white text-gray-500 text-center py-4 border-t border-gray-200 text-xs mt-auto space-y-1 shrink-0">
+            <p class="font-bold text-gray-800">HotelSmart <span class="text-whatsapp-teal">Agencies</span></p>
+            <p class="text-[10px] opacity-60">&copy; 2026 - Tous droits réservés.</p>
+        </footer>
+
+    </div>
+
+    <!-- Modale d'Audit Comptable -->
+    <div id="auditModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-file-lines"></i> Audit Comptable Détaillé</h2>
+                <button class="close-modal" onclick="closeAuditModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="auditModalBody">
+                <!-- Sélecteur de période -->
+                <div class="audit-period-selector">
+                    <label><i class="fa-regular fa-calendar"></i> Période du :</label>
+                    <input type="date" id="audit-start-date">
+                    <label>Au :</label>
+                    <input type="date" id="audit-end-date">
+                    <button class="btn-audit-go" onclick="generateAuditReport()"><i class="fa-solid fa-arrow-right"></i> Générer l'Audit</button>
+                    <span style="margin-left: auto; font-size: 0.75rem; color: #718096;"><i class="fa-regular fa-clock"></i> Aujourd'hui : <span id="audit-today-date"></span></span>
+                </div>
+                <!-- Contenu du rapport d'audit -->
+                <div id="auditReportContainer">
+                    <div class="text-center py-12 text-gray-400">
+                        <i class="fa-solid fa-file-circle-plus text-5xl mb-4 block"></i>
+                        <p class="text-lg font-semibold">Sélectionnez une période et cliquez sur "Générer l'Audit"</p>
+                        <p class="text-sm">Un rapport complet avec tous les détails financiers sera affiché ici.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-close-modal" onclick="closeAuditModal()"><i class="fa-solid fa-times"></i> Fermer</button>
+                <button class="btn-print" onclick="printAuditReport()"><i class="fa-solid fa-print"></i> Imprimer le Rapport</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zone d'impression isolée pour l'audit -->
+    <div id="printArea"></div>
+
+    <!-- Firebase Realtime Database Integration Layer -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmlcMYeoeo4ESVWgzTC2zdq4lheqwbOyc",
+            authDomain: "imany-hotel.firebaseapp.com",
+            databaseURL: "https://imany-hotel-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "imany-hotel",
+            storageBucket: "imany-hotel.firebasestorage.app",
+            messagingSenderId: "941252716027",
+            appId: "1:941252716027:web:63b91f87c4f3fc7f07975e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Export global cloud synchronization functions to the window context
+        window.firebaseCloud = {
+            db: db,
+            syncExpenses: function(expensesData) {
+                set(ref(db, 'HOTEL_SMART_expenses'), expensesData)
+                    .catch(err => console.error("Erreur de synchronisation Cloud Expenses :", err));
+            },
+            syncPayments: function(paymentsData) {
+                set(ref(db, 'payments'), paymentsData)
+                    .catch(err => console.error("Erreur de synchronisation Cloud Payments :", err));
+            },
+            logoutCloud: function() {
+                remove(ref(db, 'current_session'))
+                    .then(() => {
+                        window.location.href = 'login.html';
+                    });
+            }
+        };
+
+        // --- CONTRÔLE DE SESSION & ACCÈS PAR RÔLE ---
+        onValue(ref(db, 'current_session'), (snapshot) => {
+            if (!snapshot.exists()) {
+                window.location.href = 'login.html';
+                return;
+            }
+            const session = snapshot.val();
+            // Filtrage strict : Seul le rôle Propriétaire peut visualiser l'espace comptable
+            if (session.role !== 'Propriétaire') {
+                alert("Accès refusé. Cette page est réservée exclusivement au Propriétaire.");
+                window.location.href = 'index.html';
+                return;
+            }
+            // Affichage de l'utilisateur connecté en bas de la barre de navigation
+            const userFooter = document.getElementById('user-footer-display');
+            if (userFooter) {
+                userFooter.innerHTML = `<i class="fa-solid fa-user-shield mr-1"></i> ${session.username || session.user || 'Propriétaire'} (${session.role})`;
+            }
+            // Sauvegarde globale du code de sécurité associé
+            window.userSecurityCode = session.securityCode || "";
+            // Récupération du code propriétaire depuis company_data
+            onValue(ref(db, 'company_data'), (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    if (data && data.company && data.company.ownerSecretCode) {
+                        window.ownerSecretCode = data.company.ownerSecretCode;
+                        // Récupération du nom du propriétaire pour l'affichage dans l'audit
+                        if (data.company.ownerName) {
+                            window.ownerName = data.company.ownerName;
+                        }
+                        if (data.company.name) {
+                            window.companyName = data.company.name;
+                        }
+                    }
+                }
+            });
+        });
+
+        // Network Status Toast handling with Firebase synchronization state
+        const statusToast = document.getElementById('network-status-toast');
+        function setStatusIndicator(state) {
+            if (!statusToast) return;
+            if (state === 'online') {
+                statusToast.className = "text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold";
+                statusToast.innerText = "Synchronisé";
+            } else if (state === 'offline') {
+                statusToast.className = "text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse";
+                statusToast.innerText = "Mode Hors-ligne";
+            } else {
+                statusToast.className = "text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold";
+                statusToast.innerText = "Synchronisation...";
+            }
+        }
+
+        // Setup real-time listeners for primary global records (Cloud-First Architecture)
+        const connectedRef = ref(db, ".info/connected");
+        onValue(connectedRef, (snap) => {
+            if (snap.val() === true) {
+                setStatusIndicator('online');
+            } else {
+                setStatusIndicator('offline');
+            }
+        });
+
+        // Sync Company Profile
+        onValue(ref(db, 'company_data'), (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                if (data && data.company) {
+                    if (data.company.name) {
+                        document.getElementById('header-name-display').innerText = data.company.name;
+                        window.companyName = data.company.name;
+                    }
+                    if (data.company.ownerName) {
+                        window.ownerName = data.company.ownerName;
+                    }
+                    if (data.company.ownerSecretCode) {
+                        window.ownerSecretCode = data.company.ownerSecretCode;
+                    }
+                }
+            }
+        });
+
+        // Sync Rooms Data
+        onValue(ref(db, 'rooms'), (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                window.rooms = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                if (typeof window.syncAndRefreshUI === 'function') window.syncAndRefreshUI();
+            } else {
+                window.rooms = [];
+                if (typeof window.syncAndRefreshUI === 'function') window.syncAndRefreshUI();
+            }
+        });
+
+        // Sync Payments Log (Nœud 'payments' unifié pour l'historique d'encaissement global)
+        onValue(ref(db, 'payments'), (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                window.paymentsLog = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                if (typeof window.syncAndRefreshUI === 'function') window.syncAndRefreshUI();
+            } else {
+                window.paymentsLog = [];
+                if (typeof window.syncAndRefreshUI === 'function') window.syncAndRefreshUI();
+            }
+        });
+
+        // Sync Expenses Log
+        onValue(ref(db, 'HOTEL_SMART_expenses'), (snapshot) => {
+            if (snapshot.exists()) {
+                window.expensesLog = snapshot.val();
+                if (typeof window.syncAndRefreshUI === 'function') window.syncAndRefreshUI();
+            } else {
+                window.expensesLog = [];
+                if (typeof window.syncAndRefreshUI === 'function') window.syncAndRefreshUI();
+            }
+        });
+
+        // Sync Real-Time Employees database structure mapping to payroll layout
+        onValue(ref(db, 'employees'), (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                window.employeesDatabase = Object.keys(data).map(key => ({
+                    id: key,
+                    name: data[key].nom,
+                    role: data[key].role,
+                    salaryDue: Math.round(data[key].net || data[key].brut || 0)
+                }));
+                if (typeof window.setupEmployeeList === 'function') window.setupEmployeeList();
+            }
+        });
+    </script>
+
+    <script>
+        // Logique de la Sidebar Navigation
+        const openMenuBtn = document.getElementById('openMenuBtn');
+        const closeMenuBtn = document.getElementById('closeMenuBtn');
+        const sidebarMenu = document.getElementById('sidebarMenu');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function openMenu() {
+            sidebarOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                sidebarOverlay.classList.remove('opacity-0');
+                sidebarOverlay.classList.add('opacity-100');
+                sidebarMenu.classList.remove('-translate-x-full');
+            }, 10);
+        }
+
+        function closeMenu() {
+            sidebarMenu.classList.add('-translate-x-full');
+            sidebarOverlay.classList.remove('opacity-100');
+            sidebarOverlay.classList.add('opacity-0');
+            setTimeout(() => {
+                sidebarOverlay.classList.add('hidden');
+            }, 300);
+        }
+
+        openMenuBtn.addEventListener('click', openMenu);
+        closeMenuBtn.addEventListener('click', closeMenu);
+        sidebarOverlay.addEventListener('click', closeMenu);
+
+        // --- Données & Logique Comptable (Stockage en mémoire uniquement) ---
+        window.rooms = [];
+        window.paymentsLog = [];
+        window.expensesLog = [];
+
+        // Base de données dynamique chargée depuis Firebase Cloud
+        window.employeesDatabase = [];
+
+        // Variables de mémoire globales pour la validation croisée des retraits sécurisés
+        let currentRoomProfit = 0;
+        let currentMenuProfit = 0;
+        let currentDrinkProfit = 0;
+        let currentDrinkCapital = 0;
+
+        // Variables pour les noms du propriétaire et de l'établissement
+        window.ownerName = "Propriétaire";
+        window.companyName = "HotelSmart";
+
+        // Stockage des IDs des lignes sélectionnées pour suppression
+        let selectedLedgerIds = new Set();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateAndRenderAccounting();
+            updateExpenseTypeIndicator();
+            // Initialisation des dates pour l'audit
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('audit-today-date').innerText = new Date().toLocaleDateString('fr-FR');
+            document.getElementById('audit-start-date').value = today;
+            document.getElementById('audit-end-date').value = today;
+        });
+
+        // Global interface refresher called after Firebase synchronization tasks
+        window.syncAndRefreshUI = function() {
+            calculateAndRenderAccounting();
+        };
+
+        window.setupEmployeeList = function() {
+            const salarySelect = document.getElementById('expense-salary-employee');
+            if(!salarySelect) return;
+            
+            if(window.employeesDatabase.length === 0) {
+                salarySelect.innerHTML = `<option value="">Aucun employé disponible</option>`;
+                return;
+            }
+
+            salarySelect.innerHTML = window.employeesDatabase.map(emp => 
+                `<option value="${emp.id}" data-name="${emp.name}" data-role="${emp.role}" data-due="${emp.salaryDue}">
+                    ${emp.name} (${emp.role}) — Dû : ${emp.salaryDue.toLocaleString()} CFA
+                </option>`
+            ).join('');
+            syncEmployeeSalaryFields();
+        }
+
+        function updateExpenseTypeIndicator() {
+            const type = document.getElementById('expense-type').value;
+            const indicator = document.getElementById('expense-type-indicator');
+            
+            if (type === 'Retrait Bénéfice Chambres') {
+                indicator.innerText = `Disponible : ${currentRoomProfit.toLocaleString()} CFA`;
+                indicator.className = "text-emerald-600 font-black text-[11px] bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100";
+            } else if (type === 'Retrait Bénéfice Menus') {
+                indicator.innerText = `Disponible : ${currentMenuProfit.toLocaleString()} CFA`;
+                indicator.className = "text-blue-600 font-black text-[11px] bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100";
+            } else if (type === 'Retrait Bénéfice Boissons') {
+                indicator.innerText = `Disponible : ${currentDrinkProfit.toLocaleString()} CFA`;
+                indicator.className = "text-purple-600 font-black text-[11px] bg-purple-50 px-2.5 py-1 rounded-full border border-purple-100";
+            } else if (type === 'Retrait Capital Boissons') {
+                indicator.innerText = `Disponible : ${currentDrinkCapital.toLocaleString()} CFA`;
+                indicator.className = "text-amber-600 font-black text-[11px] bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100";
+            } else {
+                const totalRevenues = window.paymentsLog.reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
+                const currentTotalOut = window.expensesLog.reduce((sum, e) => sum + (parseInt(e.amount) || 0), 0);
+                const availableCash = totalRevenues - currentTotalOut;
+                indicator.innerText = `Caisse : ${availableCash.toLocaleString()} CFA`;
+                indicator.className = "text-slate-600 font-black text-[11px] bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200";
+            }
+        }
+
+        function toggleReasonInputView() {
+            const cat = document.getElementById('expense-reason-category').value;
+            const customBox = document.getElementById('reason-custom-box');
+            const salaryBox = document.getElementById('reason-salary-box');
+            const salaryActions = document.getElementById('salary-actions-container');
+            const typeSelect = document.getElementById('expense-type');
+
+            if(cat === 'Salaire') {
+                customBox.classList.add('hidden');
+                salaryBox.classList.remove('hidden');
+                salaryActions.classList.remove('hidden');
+                typeSelect.value = 'Paiement Salaire';
+                syncEmployeeSalaryFields();
+            } else {
+                customBox.classList.remove('hidden');
+                salaryBox.classList.add('hidden');
+                salaryActions.classList.add('hidden');
+                if(typeSelect.value === 'Paiement Salaire') {
+                    typeSelect.value = 'Dépense Exploitation';
+                }
+            }
+            updateExpenseTypeIndicator();
+        }
+
+        function syncEmployeeSalaryFields() {
+            const selectEl = document.getElementById('expense-salary-employee');
+            const amtInput = document.getElementById('expense-amount');
+            if(!selectEl || selectEl.options.length === 0 || selectEl.value === "") return;
+            
+            const selectedOpt = selectEl.options[selectEl.selectedIndex];
+            const dueAmount = selectedOpt.getAttribute('data-due');
+            amtInput.value = dueAmount;
+        }
+
+        function getSelectedEmployeeData() {
+            const selectEl = document.getElementById('expense-salary-employee');
+            if(!selectEl || selectEl.options.length === 0 || selectEl.value === "") return null;
+            const opt = selectEl.options[selectEl.selectedIndex];
+            return {
+                name: opt.getAttribute('data-name'),
+                role: opt.getAttribute('data-role'),
+                due: parseInt(opt.getAttribute('data-due')) || 0
+            };
+        }
+
+        function downloadSalarySlip() {
+            const emp = getSelectedEmployeeData();
+            const currentAmount = parseInt(document.getElementById('expense-amount').value) || 0;
+            if(!emp) return;
+
+            const hotelName = document.getElementById('header-name-display').innerText || "HotelSmart";
+            const dateStr = new Date().toLocaleDateString('fr-FR');
+            
+            const win = window.open("", "_blank");
+            win.document.write(`
+                <html>
+                <head>
+                    <title>Bulletin de Paie - ${emp.name}</title>
+                    <style>
+                        body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #222; padding: 40px; background-color:#fff; }
+                        .container { max-width: 700px; margin: 0 auto; border: 2px solid #e2e8f0; padding: 30px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+                        .header { display: flex; justify-content: space-between; border-bottom: 3px solid #128C7E; padding-bottom: 15px; margin-bottom: 25px; }
+                        .hotel-title { font-size: 24px; font-weight: 800; color: #075E54; text-transform: uppercase; }
+                        .doc-title { font-size: 18px; font-weight: 700; color: #4a5568; background: #edf2f7; padding: 6px 15px; border-radius: 8px; }
+                        .grid { display: grid; grid-columns: 1fr 1fr; margin-bottom: 25px; gap: 15px; line-height: 1.6; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+                        th { background: #f7fafc; padding: 12px; text-align: left; font-weight: 700; border-bottom: 2px solid #edf2f7; color:#4a5568; }
+                        td { padding: 14px 12px; border-bottom: 1px solid #edf2f7; }
+                        .total-row { font-weight: bold; background: #f0fff4; color: #22543d; font-size: 16px; }
+                        .footer { margin-top: 40px; display: flex; justify-content: space-between; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; padding-top: 15px; }
+                        .signature { text-align: center; border: 1px dashed #cbd5e0; padding: 20px; width: 200px; border-radius: 8px; background: #fafafa; }
+                        @media print { body { padding: 0; } .container { border:none; box-shadow:none; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <div>
+                                <div class="hotel-title">${hotelName}</div>
+                                <div style="font-size:12px; color:#718096; margin-top:2px;">Système de Gestion Automatisé (PMS)</div>
+                            </div>
+                            <div class="doc-title">BULLETIN DE PAIE</div>
+                        </div>
+                        
+                        <div style="display:flex; justify-content:space-between; margin-bottom:25px; font-size:13px;">
+                            <div>
+                                <strong>Période de paiement :</strong> Courant Mois Récurent<br>
+                                <strong>Date d'émission :</strong> ${dateStr}
+                            </div>
+                            <div style="text-align:right;">
+                                <strong>Bénéficiaire :</strong> ${emp.name}<br>
+                                <strong>Poste occupé :</strong> ${emp.role}
+                            </div>
+                        </div>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Désignation des Éléments de Salaire</th>
+                                    <th style="text-align: right;">Montant Brut</th>
+                                    <th style="text-align: right;">Retenues</th>
+                                    <th style="text-align: right;">Net Payé (CFA)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Salaire de Base Contractuel (Dû)</td>
+                                    <td style="text-align: right;">${emp.due.toLocaleString()} CFA</td>
+                                    <td style="text-align: right;">0 CFA</td>
+                                    <td style="text-align: right;">${emp.due.toLocaleString()} CFA</td>
+                                </tr>
+                                <tr>
+                                    <td>Ajustement / Prime exceptionnelle d'exploitation</td>
+                                    <td style="text-align: right;">${(currentAmount - emp.due > 0 ? currentAmount - emp.due : 0).toLocaleString()} CFA</td>
+                                    <td style="text-align: right;">0 CFA</td>
+                                    <td style="text-align: right;">${(currentAmount - emp.due > 0 ? currentAmount - emp.due : 0).toLocaleString()} CFA</td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td colspan="3">NET À PERCEVOIR EN TRÉSORERIE DIRECTE</td>
+                                    <td style="text-align: right; font-weight:900;">${currentAmount.toLocaleString()} CFA</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="footer">
+                            <div class="signature">
+                                <strong>Émargement Salarié</strong>
+                                <div style="margin-top:40px; font-size:10px; color:#a0aec0;">Précédé de "Lu et approuvé"</div>
+                            </div>
+                            <div class="signature">
+                                <strong>Cachet Direction</strong>
+                                <div style="margin-top:40px; font-size:10px; color:#a0aec0;">Validé par la Comptabilité</div>
+                            </div>
+                        </div>
+                    </div>
+                    <script>window.print();<\/script>
+                </body>
+                </html>
+            `);
+            win.document.close();
+        }
+
+        function copySalaryToWhatsApp() {
+            const emp = getSelectedEmployeeData();
+            const currentAmount = parseInt(document.getElementById('expense-amount').value) || 0;
+            if(!emp) return;
+
+            const hotelName = document.getElementById('header-name-display').innerText || "HotelSmart";
+            const dateStr = new Date().toLocaleString('fr-FR');
+
+            const text = `*💵 CONFIRMATION DE PAIEMENT DE SALAIRE — ${hotelName.toUpperCase()}*\n\n` +
+                         `📅 *Date/Heure :* ${dateStr}\n` +
+                         `👤 *Collaborateur :* ${emp.name}\n` +
+                         `💼 *Poste :* ${emp.role}\n` +
+                         `------------------------------------\n` +
+                         `💰 *Montant Initial Dû :* ${emp.due.toLocaleString()} CFA\n` +
+                         `💵 *Montant Effectif Décaissé :* *${currentAmount.toLocaleString()} CFA*\n` +
+                         `✅ *Statut de la Ligne :* Réglé et archivé en comptabilité d'exploitation.\n\n` +
+                         `_Généré via l'application de caisse sécurisée d'HotelSmart Agencies._`;
+
+            navigator.clipboard.writeText(text).then(() => {
+                alert("✅ Message formaté copié avec succès ! Collez-le directement dans WhatsApp.");
+            }).catch(err => {
+                alert("Erreur lors de la copie du message.");
+            });
+        }
+
+        function calculateAndRenderAccounting() {
+            let roomRevenues = 0;
+            let menuRevenues = 0;
+            let drinkRevenues = 0;
+            let auxiliaryRevenues = 0;
+            let auxiliaryCount = 0;
+
+            // Variables pour le calcul des dettes théoriques cumulées sur les fiches actives occupées
+            let totalTheoreticalRooms = 0;
+            let totalTheoreticalMenu = 0;
+            let totalTheoreticalDrinks = 0;
+
+            // 1. Calcul du CA théorique total des fiches de chambres occupées
+            window.rooms.forEach(associatedRoom => {
+                if (associatedRoom && associatedRoom.status === 'Occupée') {
+                    let roomNightsCost = 0;
+                    let roomMealsCost = 0;
+                    let roomDrinksCost = 0;
+
+                    let countNights = 1;
+                    if(associatedRoom.arrivalDate) {
+                        const timePart = associatedRoom.arrivalTime ? associatedRoom.arrivalTime : "12:00";
+                        const arrivalDateTime = new Date(`${associatedRoom.arrivalDate}T${timePart}`);
+                        const currentDateTime = new Date();
+                        const timeDiff = currentDateTime.getTime() - arrivalDateTime.getTime();
+                        if(timeDiff > 0) {
+                            const daysCalculated = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                            if(daysCalculated > 0) countNights = daysCalculated;
+                        }
+                    }
+                    roomNightsCost = (parseInt(associatedRoom.price) || 0) * countNights;
+                    totalTheoreticalRooms += roomNightsCost;
+
+                    if(associatedRoom.mealsDetails) {
+                        Object.keys(associatedRoom.mealsDetails).forEach(key => {
+                            const meal = associatedRoom.mealsDetails[key];
+                            if(meal && meal.menu && meal.price) {
+                                roomMealsCost += parseInt(meal.price) || 0;
+                            }
+                        });
+                    }
+                    totalTheoreticalMenu += roomMealsCost;
+
+                    if(associatedRoom.drinks && associatedRoom.drinks.length > 0) {
+                        associatedRoom.drinks.forEach(d => {
+                            roomDrinksCost += parseInt(d.price) || 0;
+                        });
+                    }
+                    totalTheoreticalDrinks += roomDrinksCost;
+                }
+            });
+
+            // 2. Traitement des encaissements réels reçus
+            window.paymentsLog.forEach(p => {
+                const amt = parseInt(p.amount) || 0;
+                
+                // Détection des paiements auxiliaires
+                if (p.type === 'auxiliaire') {
+                    auxiliaryRevenues += amt;
+                    auxiliaryCount++;
+                    return;
+                }
+                
+                const associatedRoom = window.rooms.find(r => r.number === p.roomNumber);
+                
+                if (associatedRoom) {
+                    let totalRoomBrut = 0;
+                    let roomNightsCost = 0;
+                    let roomMealsCost = 0;
+                    let roomDrinksCost = 0;
+
+                    let countNights = 1;
+                    if(associatedRoom.arrivalDate) {
+                        const timePart = associatedRoom.arrivalTime ? associatedRoom.arrivalTime : "12:00";
+                        const arrivalDateTime = new Date(`${associatedRoom.arrivalDate}T${timePart}`);
+                        const currentDateTime = new Date();
+                        const timeDiff = currentDateTime.getTime() - arrivalDateTime.getTime();
+                        if(timeDiff > 0) {
+                            const daysCalculated = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                            if(daysCalculated > 0) countNights = daysCalculated;
+                        }
+                    }
+                    roomNightsCost = (parseInt(associatedRoom.price) || 0) * countNights;
+                    totalRoomBrut += roomNightsCost;
+
+                    if(associatedRoom.mealsDetails) {
+                        Object.keys(associatedRoom.mealsDetails).forEach(key => {
+                            const meal = associatedRoom.mealsDetails[key];
+                            if(meal && meal.menu && meal.price) {
+                                roomMealsCost += parseInt(meal.price) || 0;
+                            }
+                        });
+                    }
+                    totalRoomBrut += roomMealsCost;
+
+                    if(associatedRoom.drinks && associatedRoom.drinks.length > 0) {
+                        associatedRoom.drinks.forEach(d => {
+                            roomDrinksCost += parseInt(d.price) || 0;
+                        });
+                    }
+                    totalRoomBrut += roomDrinksCost;
+
+                    if (totalRoomBrut > 0) {
+                        const ratio = amt / totalRoomBrut;
+                        roomRevenues += roomNightsCost * ratio;
+                        menuRevenues += roomMealsCost * ratio;
+                        drinkRevenues += roomDrinksCost * ratio;
+                    } else {
+                        roomRevenues += amt;
+                    }
+                } else {
+                    const category = (p.category || '').toLowerCase();
+                    const desc = (p.details || p.client || '').toLowerCase();
+
+                    if (category === 'menu' || desc.includes('menu') || desc.includes('repas') || desc.includes('restau')) {
+                        menuRevenues += amt;
+                    } else if (category === 'boisson' || desc.includes('boisson') || desc.includes('jus') || desc.includes('biere')) {
+                        drinkRevenues += amt;
+                    } else {
+                        roomRevenues += amt;
+                    }
+                }
+            });
+
+            roomRevenues = Math.round(roomRevenues);
+            menuRevenues = Math.round(menuRevenues);
+            drinkRevenues = Math.round(drinkRevenues);
+            auxiliaryRevenues = Math.round(auxiliaryRevenues);
+
+            // 3. Calcul des dettes (Théorique consommé - Réel Encaissé) sécurisées à 0 minimum
+            let debtRooms = Math.max(0, totalTheoreticalRooms - roomRevenues);
+            let debtMenu = Math.max(0, totalTheoreticalMenu - menuRevenues);
+            let debtDrinks = Math.max(0, totalTheoreticalDrinks - drinkRevenues);
+            let debtTotal = debtRooms + debtMenu + debtDrinks;
+
+            // Mise à jour de la nouvelle plaquette d'affichage des dettes
+            document.getElementById('kpi-debt-rooms').innerText = `${debtRooms.toLocaleString()} CFA`;
+            document.getElementById('kpi-debt-menu').innerText = `${debtMenu.toLocaleString()} CFA`;
+            document.getElementById('kpi-debt-drinks').innerText = `${debtDrinks.toLocaleString()} CFA`;
+            document.getElementById('kpi-debt-total').innerText = `${debtTotal.toLocaleString()} CFA`;
+
+            // Mise à jour des plaquettes Hébergement vs Auxiliaire
+            const hebergementRevenues = roomRevenues + menuRevenues + drinkRevenues;
+            document.getElementById('kpi-hebergement-revenues').innerText = `${hebergementRevenues.toLocaleString()} CFA`;
+            document.getElementById('kpi-hebergement-debt').innerText = `${debtTotal.toLocaleString()} CFA`;
+            document.getElementById('kpi-auxiliary-revenues').innerText = `${auxiliaryRevenues.toLocaleString()} CFA`;
+            document.getElementById('kpi-auxiliary-count').innerText = auxiliaryCount;
+
+            let totalRevenues = hebergementRevenues + auxiliaryRevenues;
+
+            let totalExpensesOnly = 0; 
+            let totalWithdrawals = 0;  
+
+            let roomWithdrawals = 0;
+            let menuWithdrawals = 0;
+            let drinkWithdrawals = 0;
+            let drinkCapitalWithdrawals = 0;
+
+            window.expensesLog.forEach(exp => {
+                const amt = parseInt(exp.amount) || 0;
+                if (exp.type === 'Retrait Bénéfice Chambres') {
+                    roomWithdrawals += amt;
+                    totalWithdrawals += amt;
+                } else if (exp.type === 'Retrait Bénéfice Menus') {
+                    menuWithdrawals += amt;
+                    totalWithdrawals += amt;
+                } else if (exp.type === 'Retrait Bénéfice Boissons') {
+                    drinkWithdrawals += amt;
+                    totalWithdrawals += amt;
+                } else if (exp.type === 'Retrait Capital Boissons') {
+                    drinkCapitalWithdrawals += amt;
+                    totalWithdrawals += amt;
+                } else if (exp.type === 'Retrait sur Bénéfice') { 
+                    roomWithdrawals += amt;
+                    totalWithdrawals += amt;
+                } else {
+                    totalExpensesOnly += amt;
+                }
+            });
+
+            let initialRoomProfit = roomRevenues;
+            let initialMenuProfit = menuRevenues; 
+            let initialDrinkProfit = Math.round(drinkRevenues * 0.3); 
+            let initialDrinkCapital = drinkRevenues - initialDrinkProfit;
+
+            currentRoomProfit = initialRoomProfit - roomWithdrawals;
+            currentMenuProfit = initialMenuProfit - menuWithdrawals;
+            currentDrinkProfit = initialDrinkProfit - drinkWithdrawals;
+            currentDrinkCapital = initialDrinkCapital - drinkCapitalWithdrawals;
+
+            let netProfit = totalRevenues - totalExpensesOnly - totalWithdrawals;
+            let currentCash = totalRevenues - totalExpensesOnly - totalWithdrawals;
+
+            document.getElementById('kpi-total-revenues').innerText = `${totalRevenues.toLocaleString()} CFA`;
+            document.getElementById('kpi-total-expenses').innerText = `${(totalExpensesOnly + totalWithdrawals).toLocaleString()} CFA`;
+            document.getElementById('kpi-net-profit').innerText = `${netProfit.toLocaleString()} CFA`;
+            document.getElementById('kpi-cash-position').innerText = `${currentCash.toLocaleString()} CFA`;
+
+            document.getElementById('kpi-room-revenues').innerText = `${roomRevenues.toLocaleString()} CFA`;
+            document.getElementById('kpi-room-profit').innerText = `${currentRoomProfit.toLocaleString()} CFA`;
+
+            document.getElementById('kpi-menu-revenues').innerText = `${menuRevenues.toLocaleString()} CFA`;
+            document.getElementById('kpi-menu-profit').innerText = `${currentMenuProfit.toLocaleString()} CFA`;
+
+            document.getElementById('kpi-drink-revenues').innerText = `${drinkRevenues.toLocaleString()} CFA`;
+            document.getElementById('kpi-drink-profit').innerText = `${currentDrinkProfit.toLocaleString()} CFA`;
+            document.getElementById('kpi-drink-capital').innerText = `${currentDrinkCapital.toLocaleString()} CFA`;
+
+            updateExpenseTypeIndicator();
+            renderLedgerTable();
+        }
+
+        function submitExpense() {
+            const typeSelect = document.getElementById('expense-type');
+            const amountInput = document.getElementById('expense-amount');
+            const catSelect = document.getElementById('expense-reason-category');
+            
+            let reason = "";
+            if(catSelect.value === 'Salaire') {
+                const empData = getSelectedEmployeeData();
+                reason = empData ? `Salaire : ${empData.name} (${empData.role})` : "Paiement de Salaire Personnel";
+            } else {
+                reason = document.getElementById('expense-reason').value.trim();
+            }
+
+            const type = typeSelect.value;
+            const amount = parseInt(amountInput.value) || 0;
+
+            if (amount <= 0) {
+                alert("Le montant de la sortie doit être supérieur à 0 CFA.");
+                return;
+            }
+            if (!reason) {
+                alert("Veuillez renseigner un motif ou un bénéficiaire de sortie.");
+                return;
+            }
+
+            // --- DEUXIÈME REMPART SÉCURITAIRE DIRECT : VALIDATION PAR SECURITY CODE ---
+            if (window.userSecurityCode) {
+                const userInputCode = prompt("🔐 Opération sensible. Veuillez saisir votre code de sécurité pour confirmer :");
+                if (userInputCode !== window.userSecurityCode) {
+                    alert("❌ Code de sécurité incorrect. Opération de décaissement annulée.");
+                    return;
+                }
+            }
+
+            const totalRevenues = window.paymentsLog.reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
+            const currentTotalOut = window.expensesLog.reduce((sum, e) => sum + (parseInt(e.amount) || 0), 0);
+            const availableCash = totalRevenues - currentTotalOut;
+
+            if (amount > availableCash) {
+                alert(`Opération impossible. Solde de trésorerie globale insuffisant (${availableCash.toLocaleString()} CFA).`);
+                return;
+            }
+
+            if (type === 'Retrait Bénéfice Chambres' && amount > currentRoomProfit) {
+                alert(`Opération refused. Le bénéfice disponible sur les chambres est de ${currentRoomProfit.toLocaleString()} CFA.`);
+                return;
+            }
+            if (type === 'Retrait Bénéfice Menus' && amount > currentMenuProfit) {
+                alert(`Opération refusée. Le bénéfice disponible sur les menus est de ${currentMenuProfit.toLocaleString()} CFA.`);
+                return;
+            }
+            if (type === 'Retrait Bénéfice Boissons' && amount > currentDrinkProfit) {
+                alert(`Opération refusée. Le bénéfice disponible sur les boissons est de ${currentDrinkProfit.toLocaleString()} CFA.`);
+                return;
+            }
+            if (type === 'Retrait Capital Boissons' && amount > currentDrinkCapital) {
+                alert(`Opération refusée. Le capital disponible sur les boissons est de ${currentDrinkCapital.toLocaleString()} CFA.`);
+                return;
+            }
+
+            const newExpense = {
+                id: 'exp_' + Date.now(),
+                date: new Date().toLocaleString('fr-FR'),
+                timestamp: Date.now(),
+                type: type,
+                amount: amount,
+                reason: reason
+            };
+
+            window.expensesLog.unshift(newExpense);
+
+            // Execute automated Realtime Database replication hook
+            if (window.firebaseCloud && typeof window.firebaseCloud.syncExpenses === 'function') {
+                window.firebaseCloud.syncExpenses(window.expensesLog);
+            }
+
+            alert(`✅ Décaissement sécurisé validé : ${amount.toLocaleString()} CFA affecté à '${type}'.`);
+            
+            amountInput.value = '';
+            document.getElementById('expense-reason').value = '';
+            
+            calculateAndRenderAccounting();
+        }
+
+        function renderLedgerTable() {
+            const container = document.getElementById('accounting-ledger-rows');
+            let globalItems = [];
+
+            window.paymentsLog.forEach(p => {
+                let itemTime = p.id && p.id.includes('pay_') ? parseInt(p.id.split('_')[1]) : (p.date ? new Date(p.date).getTime() : Date.now());
+                let displayDate = p.date ? new Date(p.date).toLocaleString('fr-FR') : new Date().toLocaleString('fr-FR');
+                const isAuxiliary = p.type === 'auxiliaire';
+                const typeLabel = isAuxiliary ? 'Encaissement Auxiliaire' : 'Encaissement Hébergement';
+                const typeBadge = isAuxiliary 
+                    ? `<span class="badge-aux">Auxiliaire</span>` 
+                    : `<span class="badge-hebergement">Hébergement</span>`;
+                const details = isAuxiliary 
+                    ? `${p.designation || 'Revenu auxiliaire'} - ${p.client || 'N/A'}`
+                    : `Chambre ${p.roomNumber || 'N/A'} - Client : ${p.client || 'N/A'}`;
+                
+                globalItems.push({
+                    id: p.id || 'pay_' + Date.now() + '_' + Math.random(),
+                    date: displayDate,
+                    timestamp: itemTime,
+                    type: typeBadge,
+                    details: details,
+                    income: parseInt(p.amount) || 0,
+                    expense: 0,
+                    styleClass: isAuxiliary ? "text-amber-600 font-medium" : "text-whatsapp-teal font-medium",
+                    isExpense: false
+                });
+            });
+
+            window.expensesLog.forEach(e => {
+                let badgeColor = "bg-red-50 text-red-700";
+                if(e.type === 'Paiement Salaire') badgeColor = "bg-amber-50 text-amber-700";
+                if(e.type.includes('Bénéfice')) badgeColor = "bg-purple-50 text-purple-700";
+                if(e.type.includes('Capital')) badgeColor = "bg-blue-50 text-blue-700";
+
+                globalItems.push({
+                    id: e.id || 'exp_' + Date.now() + '_' + Math.random(),
+                    date: e.date,
+                    timestamp: e.timestamp || Date.now(),
+                    type: `<span class="${badgeColor} px-2 py-0.5 rounded font-bold uppercase text-[9px]">${e.type}</span>`,
+                    details: e.reason,
+                    income: 0,
+                    expense: parseInt(e.amount) || 0,
+                    styleClass: "text-red-600 font-medium",
+                    isExpense: true
+                });
+            });
+
+            globalItems.sort((a, b) => b.timestamp - a.timestamp);
+
+            if (globalItems.length === 0) {
+                container.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400 italic">Aucune transaction enregistrée dans le grand livre.</td></tr>`;
+                return;
+            }
+
+            container.innerHTML = globalItems.map(item => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-3"><input type="checkbox" class="ledger-checkbox" data-id="${item.id}" onchange="toggleLedgerSelection('${item.id}')"></td>
+                    <td class="p-3 font-medium text-gray-500">${item.date}</td>
+                    <td class="p-3 font-bold text-gray-900">${item.type}</td>
+                    <td class="p-3 text-gray-600">${item.details}</td>
+                    <td class="p-3 text-right font-black ${item.income > 0 ? 'text-whatsapp-teal' : 'text-gray-400'}">${item.income > 0 ? item.income.toLocaleString() + ' CFA' : '-'}</td>
+                    <td class="p-3 text-right font-black text-red-600">${item.expense > 0 ? item.expense.toLocaleString() + ' CFA' : '-'}</td>
+                </tr>
+            `).join('');
+            
+            // Réinitialiser la sélection
+            selectedLedgerIds.clear();
+            document.getElementById('select-all-ledger').checked = false;
+        }
+
+        // --- Gestion de la sélection des lignes pour suppression ---
+        function toggleLedgerSelection(id) {
+            if (selectedLedgerIds.has(id)) {
+                selectedLedgerIds.delete(id);
+            } else {
+                selectedLedgerIds.add(id);
+            }
+        }
+
+        function toggleAllLedgerCheckboxes() {
+            const selectAll = document.getElementById('select-all-ledger');
+            const checkboxes = document.querySelectorAll('.ledger-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    selectedLedgerIds.add(cb.dataset.id);
+                } else {
+                    selectedLedgerIds.delete(cb.dataset.id);
+                }
+            });
+        }
+
+        // --- Suppression sécurisée avec code propriétaire ---
+        function deleteSelectedExpense() {
+            if (selectedLedgerIds.size === 0) {
+                alert("Veuillez sélectionner au moins une ligne à supprimer.");
+                return;
+            }
+
+            // Vérification du code propriétaire
+            const ownerCode = prompt("🔐 Veuillez entrer le code secret du Propriétaire pour confirmer la suppression :");
+            if (ownerCode !== window.ownerSecretCode) {
+                alert("❌ Code propriétaire incorrect. Suppression annulée.");
+                return;
+            }
+
+            // Filtrer les éléments à supprimer
+            const remainingPayments = window.paymentsLog.filter(p => !selectedLedgerIds.has(p.id));
+            const remainingExpenses = window.expensesLog.filter(e => !selectedLedgerIds.has(e.id));
+
+            // Mettre à jour les logs
+            window.paymentsLog = remainingPayments;
+            window.expensesLog = remainingExpenses;
+
+            // Synchroniser avec Firebase
+            if (window.firebaseCloud && typeof window.firebaseCloud.syncPayments === 'function') {
+                window.firebaseCloud.syncPayments(window.paymentsLog);
+            }
+            if (window.firebaseCloud && typeof window.firebaseCloud.syncExpenses === 'function') {
+                window.firebaseCloud.syncExpenses(window.expensesLog);
+            }
+
+            // Réinitialiser la sélection
+            const count = selectedLedgerIds.size;
+            selectedLedgerIds.clear();
+            document.getElementById('select-all-ledger').checked = false;
+
+            alert(`✅ ${count} ligne(s) supprimée(s) avec succès.`);
+            calculateAndRenderAccounting();
+        }
+
+        // --- Gestion de la Modale d'Audit ---
+        function openAuditModal() {
+            document.getElementById('auditModal').classList.remove('hidden');
+            document.getElementById('auditModalBody').style.display = 'block';
+            // Réinitialiser les dates
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('audit-start-date').value = today;
+            document.getElementById('audit-end-date').value = today;
+            // Afficher un message d'invitation
+            document.getElementById('auditReportContainer').innerHTML = `
+                <div class="text-center py-12 text-gray-400">
+                    <i class="fa-solid fa-file-circle-plus text-5xl mb-4 block"></i>
+                    <p class="text-lg font-semibold">Sélectionnez une période et cliquez sur "Générer l'Audit"</p>
+                    <p class="text-sm">Un rapport complet avec tous les détails financiers sera affiché ici.</p>
+                </div>
+            `;
+        }
+
+        function closeAuditModal() {
+            document.getElementById('auditModal').classList.add('hidden');
+        }
+
+        // --- Génération du Rapport d'Audit ---
+        function generateAuditReport() {
+            const startDate = document.getElementById('audit-start-date').value;
+            const endDate = document.getElementById('audit-end-date').value;
+
+            if (!startDate || !endDate) {
+                alert("Veuillez sélectionner une période de dates valide.");
+                return;
+            }
+
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+
+            if (start > end) {
+                alert("La date de début doit être antérieure à la date de fin.");
+                return;
+            }
+
+            // Filtrer les transactions par période
+            const filteredPayments = window.paymentsLog.filter(p => {
+                const pDate = p.date ? new Date(p.date) : new Date(0);
+                return pDate >= start && pDate <= end;
+            });
+
+            const filteredExpenses = window.expensesLog.filter(e => {
+                const eDate = e.date ? new Date(e.date) : new Date(0);
+                return eDate >= start && eDate <= end;
+            });
+
+            // Calcul des totaux avec distinction Hébergement / Auxiliaire
+            let hebergementIncome = 0;
+            let auxiliaryIncome = 0;
+            filteredPayments.forEach(p => {
+                if (p.type === 'auxiliaire') {
+                    auxiliaryIncome += parseInt(p.amount) || 0;
+                } else {
+                    hebergementIncome += parseInt(p.amount) || 0;
+                }
+            });
+            const totalIncome = hebergementIncome + auxiliaryIncome;
+            const totalExpense = filteredExpenses.reduce((sum, e) => sum + (parseInt(e.amount) || 0), 0);
+            const netBalance = totalIncome - totalExpense;
+
+            // Calcul des dettes à recouvrer sur la période (dettes des chambres occupées)
+            let periodDebtRooms = 0;
+            let periodDebtMenu = 0;
+            let periodDebtDrinks = 0;
+            
+            window.rooms.forEach(room => {
+                if (room && room.status === 'Occupée') {
+                    let roomNightsCost = 0;
+                    let roomMealsCost = 0;
+                    let roomDrinksCost = 0;
+                    let countNights = 1;
+                    if(room.arrivalDate) {
+                        const timePart = room.arrivalTime ? room.arrivalTime : "12:00";
+                        const arrivalDateTime = new Date(`${room.arrivalDate}T${timePart}`);
+                        const currentDateTime = new Date();
+                        const timeDiff = currentDateTime.getTime() - arrivalDateTime.getTime();
+                        if(timeDiff > 0) {
+                            const daysCalculated = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                            if(daysCalculated > 0) countNights = daysCalculated;
+                        }
+                    }
+                    roomNightsCost = (parseInt(room.price) || 0) * countNights;
+                    periodDebtRooms += roomNightsCost;
+                    if(room.mealsDetails) {
+                        Object.keys(room.mealsDetails).forEach(key => {
+                            const meal = room.mealsDetails[key];
+                            if(meal && meal.menu && meal.price) {
+                                roomMealsCost += parseInt(meal.price) || 0;
+                            }
+                        });
+                    }
+                    periodDebtMenu += roomMealsCost;
+                    if(room.drinks && room.drinks.length > 0) {
+                        room.drinks.forEach(d => {
+                            roomDrinksCost += parseInt(d.price) || 0;
+                        });
+                    }
+                    periodDebtDrinks += roomDrinksCost;
+                }
+            });
+
+            // Soustraire les paiements déjà effectués sur la période
+            const paidRooms = filteredPayments
+                .filter(p => p.type !== 'auxiliaire')
+                .reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
+            
+            // Calcul de la dette résiduelle (minimum 0)
+            const totalDebt = Math.max(0, periodDebtRooms + periodDebtMenu + periodDebtDrinks - paidRooms);
+
+            // Détails par type de dépense
+            const expensesByType = {};
+            filteredExpenses.forEach(e => {
+                const type = e.type || 'Dépense Exploitation';
+                expensesByType[type] = (expensesByType[type] || 0) + (parseInt(e.amount) || 0);
+            });
+
+            // Récupération des noms pour l'entête
+            const hotelName = window.companyName || document.getElementById('header-name-display').innerText || 'HotelSmart';
+            const ownerName = window.ownerName || 'Propriétaire';
+
+            // Construction du rapport HTML
+            let reportHTML = `
+                <div class="audit-report-header">
+                    <div class="hotel-name">${hotelName}</div>
+                    <div class="report-title">RAPPORT D'AUDIT COMPTABLE DÉTAILLÉ</div>
+                    <div class="period-info">Période du ${new Date(start).toLocaleDateString('fr-FR')} au ${new Date(end).toLocaleDateString('fr-FR')}</div>
+                    <div class="period-info" style="font-size:0.8rem; color:#718096;">Généré le ${new Date().toLocaleString('fr-FR')}</div>
+                </div>
+            `;
+
+            // Tableau des transactions
+            reportHTML += `
+                <table class="audit-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Détails</th>
+                            <th style="text-align:right;">Entrée (CFA)</th>
+                            <th style="text-align:right;">Sortie (CFA)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            // Fusionner et trier les transactions
+            const allTransactions = [
+                ...filteredPayments.map(p => ({
+                    date: p.date || new Date().toLocaleString('fr-FR'),
+                    type: p.type === 'auxiliaire' ? 'Auxiliaire' : 'Hébergement',
+                    details: p.type === 'auxiliaire' 
+                        ? `${p.designation || 'Revenu auxiliaire'} - ${p.client || 'N/A'}`
+                        : `Chambre ${p.roomNumber || 'N/A'} - Client : ${p.client || 'N/A'}`,
+                    income: parseInt(p.amount) || 0,
+                    expense: 0,
+                    timestamp: p.timestamp || Date.now()
+                })),
+                ...filteredExpenses.map(e => ({
+                    date: e.date || new Date().toLocaleString('fr-FR'),
+                    type: e.type || 'Dépense Exploitation',
+                    details: e.reason || 'N/A',
+                    income: 0,
+                    expense: parseInt(e.amount) || 0,
+                    timestamp: e.timestamp || Date.now()
+                }))
+            ];
+
+            allTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            if (allTransactions.length === 0) {
+                reportHTML += `<tr><td colspan="5" style="text-align:center; padding:20px; color:#a0aec0;">Aucune transaction pour la période sélectionnée.</td></tr>`;
+            } else {
+                allTransactions.forEach(t => {
+                    const incomeColor = t.type === 'Auxiliaire' ? '#d97706' : '#128C7E';
+                    reportHTML += `
+                        <tr>
+                            <td>${t.date}</td>
+                            <td><strong>${t.type}</strong></td>
+                            <td>${t.details}</td>
+                            <td style="text-align:right; font-weight:700; color:${incomeColor};">${t.income > 0 ? t.income.toLocaleString() + ' CFA' : '-'}</td>
+                            <td style="text-align:right; font-weight:700; color:#e53e3e;">${t.expense > 0 ? t.expense.toLocaleString() + ' CFA' : '-'}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            reportHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            // Récapitulatif d'audit avec distinction Hébergement / Auxiliaire
+            reportHTML += `
+                <div class="audit-summary">
+                    <div class="summary-item" style="border-left-color: #128C7E;">
+                        <div class="label">Total Encaissements Hébergement</div>
+                        <div class="value" style="color:#128C7E;">${hebergementIncome.toLocaleString()} CFA</div>
+                    </div>
+                    <div class="summary-item" style="border-left-color: #d97706;">
+                        <div class="label">Total Encaissements Auxiliaires</div>
+                        <div class="value" style="color:#d97706;">${auxiliaryIncome.toLocaleString()} CFA</div>
+                    </div>
+                    <div class="summary-item" style="border-left-color: #e53e3e;">
+                        <div class="label">Total des Décaissements</div>
+                        <div class="value" style="color:#e53e3e;">${totalExpense.toLocaleString()} CFA</div>
+                    </div>
+                    <div class="summary-item" style="border-left-color: ${netBalance >= 0 ? '#128C7E' : '#e53e3e'};">
+                        <div class="label">Solde Net de la Période</div>
+                        <div class="value" style="color:${netBalance >= 0 ? '#128C7E' : '#e53e3e'};">${netBalance.toLocaleString()} CFA</div>
+                    </div>
+                    <div class="summary-item" style="border-left-color: #6b46c1;">
+                        <div class="label">Dettes à Recouvrer</div>
+                        <div class="value" style="color:#6b46c1;">${totalDebt.toLocaleString()} CFA</div>
+                    </div>
+                </div>
+            `;
+
+            // Détail des dépenses par catégorie
+            if (Object.keys(expensesByType).length > 0) {
+                reportHTML += `
+                    <div style="margin-top:16px; background:#f7fafc; border-radius:12px; padding:14px 18px; border:1px solid #e2e8f0;">
+                        <p style="font-weight:700; color:#2d3748; font-size:0.8rem; margin-bottom:8px;">📊 Répartition des Décaissements par Catégorie</p>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:8px;">
+                `;
+                Object.keys(expensesByType).forEach(type => {
+                    reportHTML += `
+                        <div style="background:white; border-radius:8px; padding:8px 12px; border:1px solid #e2e8f0;">
+                            <span style="font-size:0.7rem; color:#718096;">${type}</span>
+                            <span style="display:block; font-weight:700; color:#2d3748;">${expensesByType[type].toLocaleString()} CFA</span>
+                        </div>
+                    `;
+                });
+                reportHTML += `
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Signatures
+            reportHTML += `
+                <div class="audit-signatures">
+                    <div class="sig-block">
+                        <strong>Établi par le Comptable</strong>
+                        <div class="sig-line"></div>
+                        <span style="font-size:0.7rem; color:#a0aec0;">Nom et signature</span>
+                    </div>
+                    <div class="sig-block">
+                        <strong>Validé par le Propriétaire</strong>
+                        <div class="sig-line"></div>
+                        <span style="font-size:0.7rem; color:#a0aec0;">${ownerName}</span>
+                    </div>
+                    <div class="sig-block">
+                        <strong>Cachet de l'Établissement</strong>
+                        <div class="sig-line"></div>
+                        <span style="font-size:0.7rem; color:#a0aec0;">${hotelName}</span>
+                    </div>
+                </div>
+            `;
+
+            // Mettre à jour l'affichage dans la modale
+            document.getElementById('auditReportContainer').innerHTML = reportHTML;
+
+            // Préparer également le contenu pour l'impression dans la zone printArea
+            const printArea = document.getElementById('printArea');
+            printArea.innerHTML = `
+                <div class="audit-report-header">
+                    <div class="hotel-name">${hotelName}</div>
+                    <div class="report-title">RAPPORT D'AUDIT COMPTABLE DÉTAILLÉ</div>
+                    <div class="period-info">Période du ${new Date(start).toLocaleDateString('fr-FR')} au ${new Date(end).toLocaleDateString('fr-FR')}</div>
+                    <div class="period-info" style="font-size:0.8rem; color:#718096;">Généré le ${new Date().toLocaleString('fr-FR')}</div>
+                </div>
+                <table class="audit-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Détails</th>
+                            <th style="text-align:right;">Entrée (CFA)</th>
+                            <th style="text-align:right;">Sortie (CFA)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            if (allTransactions.length === 0) {
+                printArea.innerHTML += `<tr><td colspan="5" style="text-align:center; padding:20px; color:#a0aec0;">Aucune transaction pour la période sélectionnée.</td></tr>`;
+            } else {
+                allTransactions.forEach(t => {
+                    const incomeColor = t.type === 'Auxiliaire' ? '#d97706' : '#128C7E';
+                    printArea.innerHTML += `
+                        <tr>
+                            <td>${t.date}</td>
+                            <td><strong>${t.type}</strong></td>
+                            <td>${t.details}</td>
+                            <td style="text-align:right; font-weight:700; color:${incomeColor};">${t.income > 0 ? t.income.toLocaleString() + ' CFA' : '-'}</td>
+                            <td style="text-align:right; font-weight:700; color:#e53e3e;">${t.expense > 0 ? t.expense.toLocaleString() + ' CFA' : '-'}</td>
+                        </tr>
+                    `;
+                });
+            }
+            printArea.innerHTML += `
+                    </tbody>
+                </table>
+                <div class="audit-summary">
+                    <div class="summary-item" style="border-left-color: #128C7E;">
+                        <div class="label">Total Encaissements Hébergement</div>
+                        <div class="value" style="color:#128C7E;">${hebergementIncome.toLocaleString()} CFA</div>
+                    </div>
+                    <div class="summary-item" style="border-left-color: #d97706;">
+                        <div class="label">Total Encaissements Auxiliaires</div>
+                        <div class="value" style="color:#d97706;">${auxiliaryIncome.toLocaleString()} CFA</div>
+                    </div>
+                    <div class="summary-item" style="border-left-color: #e53e3e;">
+                        <div class="label">Total des Décaissements</div>
+                        <div class="value" style="color:#e53e3e;">${totalExpense.toLocaleString()} CFA</div>
+                    </div>
+                    <div class="summary-item" style="border-left-color: ${netBalance >= 0 ? '#128C7E' : '#e53e3e'};">
+                        <div class="label">Solde Net de la Période</div>
+                        <div class="value" style="color:${netBalance >= 0 ? '#128C7E' : '#e53e3e'};">${netBalance.toLocaleString()} CFA</div>
+                    </div>
+                    <div class="summary-item" style="border-left-color: #6b46c1;">
+                        <div class="label">Dettes à Recouvrer</div>
+                        <div class="value" style="color:#6b46c1;">${totalDebt.toLocaleString()} CFA</div>
+                    </div>
+                </div>
+            `;
+            if (Object.keys(expensesByType).length > 0) {
+                printArea.innerHTML += `
+                    <div style="margin-top:16px; background:#f7fafc; border-radius:12px; padding:14px 18px; border:1px solid #e2e8f0;">
+                        <p style="font-weight:700; color:#2d3748; font-size:0.8rem; margin-bottom:8px;">📊 Répartition des Décaissements par Catégorie</p>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:8px;">
+                `;
+                Object.keys(expensesByType).forEach(type => {
+                    printArea.innerHTML += `
+                        <div style="background:white; border-radius:8px; padding:8px 12px; border:1px solid #e2e8f0;">
+                            <span style="font-size:0.7rem; color:#718096;">${type}</span>
+                            <span style="display:block; font-weight:700; color:#2d3748;">${expensesByType[type].toLocaleString()} CFA</span>
+                        </div>
+                    `;
+                });
+                printArea.innerHTML += `
+                        </div>
+                    </div>
+                `;
+            }
+            printArea.innerHTML += `
+                <div class="audit-signatures">
+                    <div class="sig-block">
+                        <strong>Établi par le Comptable</strong>
+                        <div class="sig-line"></div>
+                        <span style="font-size:0.7rem; color:#a0aec0;">Nom et signature</span>
+                    </div>
+                    <div class="sig-block">
+                        <strong>Validé par le Propriétaire</strong>
+                        <div class="sig-line"></div>
+                        <span style="font-size:0.7rem; color:#a0aec0;">${ownerName}</span>
+                    </div>
+                    <div class="sig-block">
+                        <strong>Cachet de l'Établissement</strong>
+                        <div class="sig-line"></div>
+                        <span style="font-size:0.7rem; color:#a0aec0;">${hotelName}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Fonction d'impression professionnelle avec délai de sécurité
+        function printAuditReport() {
+            const printArea = document.getElementById('printArea');
+            if (!printArea || printArea.innerHTML.trim() === '') {
+                alert("Veuillez d'abord générer le rapport d'audit avant d'imprimer.");
+                return;
+            }
+            
+            printArea.style.display = 'block';
+            
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    printArea.style.display = 'none';
+                }, 500);
+            }, 300);
+        }
+
+        function logout() {
+            if(confirm("Quitter la session ?")) {
+                if (window.firebaseCloud && typeof window.firebaseCloud.logoutCloud === 'function') {
+                    window.firebaseCloud.logoutCloud();
+                } else {
+                    window.location.href = 'login.html';
+                }
+            }
+        }
+
+        // --- Logique Progressive Web App (PWA) ---
+        let deferredPrompt;
+        const installBtn = document.getElementById('pwa-install-btn');
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker enregistré sur l\'espace comptable.'))
+                    .catch(err => console.error('Erreur d\'enregistrement SW Comptabilité :', err));
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (installBtn) {
+                installBtn.style.display = 'flex';
+            }
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('Installation validée par l\'utilisateur.');
+                        }
+                        deferredPrompt = null;
+                        installBtn.style.display = 'none';
+                    });
+                }
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            if (installBtn) {
+                installBtn.style.display = 'none';
+            }
+            deferredPrompt = null;
+        });
+
+        // Fermeture de la modale en cliquant en dehors
+        document.getElementById('auditModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAuditModal();
+            }
+        });
+    </script>
+</body>
+</html>

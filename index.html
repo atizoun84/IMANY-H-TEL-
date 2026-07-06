@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil - HotelSmart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        whatsapp: {
+                            dark: '#075E54',
+                            teal: '#128C7E',
+                            light: '#25D366',
+                            bg: '#F0F2F5',
+                            card: '#FFFFFF'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex justify-center items-center p-0 md:p-0">
+
+    <div class="w-full max-w-md md:max-w-full lg:max-w-full xl:max-w-full bg-whatsapp-bg h-screen md:h-screen sm:rounded-3xl sm:shadow-2xl overflow-hidden flex flex-col relative border border-gray-200">
+        
+        <div id="sidebarOverlay" class="absolute inset-0 bg-black/50 z-40 hidden transition-opacity duration-300 opacity-0 sm:rounded-3xl"></div>
+
+        <aside id="sidebarMenu" class="absolute top-0 bottom-0 left-0 w-64 bg-[#222e35] text-gray-300 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col sm:rounded-l-3xl shadow-2xl">
+            <div class="p-4 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal text-white flex justify-between items-center sm:rounded-tl-3xl">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-hotel text-xl"></i>
+                    <span class="font-bold text-sm tracking-wide">Menu Gestion</span>
+                </div>
+                <button id="closeMenuBtn" class="text-white text-xl focus:outline-none hover:opacity-80">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <nav id="nav-container" class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-none">
+                <a href="index.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-whatsapp-teal text-white font-medium transition-colors">
+                    <i class="fa-solid fa-house w-5"></i>
+                    <span class="text-sm">Accueil</span>
+                </a>
+                <a href="contrats.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-bed w-5"></i>
+                    <span class="text-sm">Chambres</span>
+                </a>
+                <a href="contrat_locataires.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-users w-5"></i>
+                    <span class="text-sm">Clients</span>
+                </a>
+                <a href="paiements.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-money-bill-wave w-5"></i>
+                    <span class="text-sm">Paiements</span>
+                </a>
+                <a id="nav-compta" href="comptabilite.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-calculator w-5"></i>
+                    <span class="text-sm">Comptabilité</span>
+                </a>
+                <a href="recherche.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-magnifying-glass w-5"></i>
+                    <span class="text-sm">Recherche</span>
+                </a>
+                <div class="border-t border-gray-700/60 my-4"></div>
+                <a id="nav-config" href="config.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-gear w-5"></i>
+                    <span class="text-sm">Configuration PMS</span>
+                </a>
+                
+                <div class="pt-2 px-4 text-xs text-whatsapp-light font-medium bg-slate-800/40 rounded-xl py-2 border border-slate-700/30">
+                    <i class="fa-solid fa-user-shield mr-1"></i> <span id="sidebar-user-display">Chargement...</span>
+                </div>
+
+                <a href="#" onclick="logout()" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-red-900/30 text-amber-500 transition-colors">
+                    <i class="fa-solid fa-sign-out-alt w-5"></i>
+                    <span class="text-sm">Quitter</span>
+                </a>
+            </nav>
+            <div class="p-4 border-t border-gray-700/60 text-xs text-gray-500 text-center">
+                v1.2.0 - PWA Connect
+            </div>
+        </aside>
+
+        <header class="sticky top-0 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal px-4 pt-4 pb-3 flex justify-between items-center shadow-md z-30 sm:rounded-t-3xl shrink-0">
+            <button id="openMenuBtn" class="text-white text-xl focus:outline-none"><i class="fa-solid fa-bars"></i></button>
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <span id="header-name-display">HotelSmart</span>
+                <span id="network-status-toast" class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">Vérification...</span>
+            </h1>
+            <div class="flex items-center">
+                <img src="logo maison.png" alt="Logo" id="header-logo-display" class="w-10 h-10 object-contain rounded-full border border-white/20 bg-white/10 p-0.5" onerror="this.style.display='none';">
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-12">
+            
+            <div>
+                <h2 class="text-xl font-bold text-gray-900 flex items-center gap-1">
+                    Tableau de Bord Principal 👋
+                </h2>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Aperçu en temps réel de votre établissement et actions prioritaires</p>
+            </div>
+
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between">
+                    <span class="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Chambres Occupées</span>
+                    <span id="home-kpi-occupied" class="text-xl font-black text-whatsapp-teal mt-1">0 / 0</span>
+                </div>
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between">
+                    <span class="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Taux d'Occupation</span>
+                    <span id="home-kpi-rate" class="text-xl font-black text-blue-600 mt-1">0%</span>
+                </div>
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between">
+                    <span class="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Trésorerie Disponible</span>
+                    <span id="home-kpi-cash" class="text-xl font-black text-purple-600 mt-1">0 CFA</span>
+                </div>
+                <div class="bg-white p-3.5 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col justify-between">
+                    <span class="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Mouvements (24h)</span>
+                    <span id="home-kpi-transactions" class="text-xl font-black text-amber-600 mt-1">0 op.</span>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-sm font-bold text-gray-800 flex items-center gap-1">
+                    <i class="fa-solid fa-bolt text-amber-500"></i> Actions et Raccourcis Rapides
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <a href="contrats.html" class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm hover:border-whatsapp-teal transition flex flex-col items-center text-center space-y-2 group">
+                        <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex justify-center items-center text-lg group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                            <i class="fa-solid fa-bed"></i>
+                        </div>
+                        <span class="font-bold text-gray-800">Gérer Chambres</span>
+                    </a>
+                    <a href="contrat_locataires.html" class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm hover:border-whatsapp-teal transition flex flex-col items-center text-center space-y-2 group">
+                        <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex justify-center items-center text-lg group-hover:bg-blue-600 group-hover:text-white transition-all">
+                            <i class="fa-solid fa-user-plus"></i>
+                        </div>
+                        <span class="font-bold text-gray-800">Nouveau Client</span>
+                    </a>
+                    <a href="paiements.html" class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm hover:border-whatsapp-teal transition flex flex-col items-center text-center space-y-2 group">
+                        <div class="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex justify-center items-center text-lg group-hover:bg-purple-600 group-hover:text-white transition-all">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                        </div>
+                        <span class="font-bold text-gray-800">Encaisser Frais</span>
+                    </a>
+                    <a id="shortcut-compta" href="comptabilite.html" class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm hover:border-whatsapp-teal transition flex flex-col items-center text-center space-y-2 group">
+                        <div class="w-10 h-10 rounded-full bg-red-50 text-red-600 flex justify-center items-center text-lg group-hover:bg-red-600 group-hover:text-white transition-all">
+                            <i class="fa-solid fa-calculator"></i>
+                        </div>
+                        <span class="font-bold text-gray-800">Sortie de Caisse</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm space-y-3 text-xs">
+                <p class="font-bold text-gray-800 border-b pb-1.5 flex items-center justify-between">
+                    <span class="flex items-center gap-1">
+                        <i class="fa-solid fa-circle-nodes text-whatsapp-teal"></i> Vue d'ensemble des Chambres Actives
+                    </span>
+                    <a href="contrats.html" class="text-whatsapp-teal hover:underline text-[11px] font-bold">Voir tout &rarr;</a>
+                </p>
+                <div id="home-rooms-status-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                    </div>
+            </div>
+
+        </main>
+
+        <footer class="bg-white text-gray-500 text-center py-4 border-t border-gray-200 text-xs mt-auto space-y-1 shrink-0">
+            <p class="font-bold text-gray-800">HotelSmart <span class="text-whatsapp-teal">Agencies</span></p>
+            <p class="text-[10px] opacity-60">&copy; 2026 - Tous droits réservés.</p>
+        </footer>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmlcMYeoeo4ESVWgzTC2zdq4lheqwbOyc",
+            authDomain: "imany-hotel.firebaseapp.com",
+            databaseURL: "https://imany-hotel-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "imany-hotel",
+            storageBucket: "imany-hotel.firebasestorage.app",
+            messagingSenderId: "941252716027",
+            appId: "1:941252716027:web:63b91f87c4f3fc7f07975e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Enregistrement du Service Worker pour la PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err));
+            });
+        }
+
+        const statusToast = document.getElementById('network-status-toast');
+
+        // Vérification en direct de la connexion cloud Firebase
+        const connectedRef = ref(db, '.info/connected');
+        onValue(connectedRef, (snap) => {
+            if (snap.val() === true) {
+                window.isCloudConnected = true;
+                updateNetworkStatus();
+            } else {
+                window.isCloudConnected = false;
+                updateNetworkStatus();
+            }
+        });
+
+        // Branchement des écouteurs temps réel Firebase sur le modèle de données global
+        onValue(ref(db, 'company_data'), (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.company && data.company.name) {
+                document.getElementById('header-name-display').innerText = data.company.name;
+                localStorage.setItem('HOTEL_SMART_company', JSON.stringify(data.company));
+            }
+        });
+
+        onValue(ref(db, 'rooms'), (snapshot) => {
+            if (statusToast && navigator.onLine && window.isCloudConnected) statusToast.innerText = "Synchronisation...";
+            const data = snapshot.val();
+            rooms = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+            localStorage.setItem('HOTEL_SMART_rooms', JSON.stringify(rooms));
+            compileHomeDashboard();
+            updateNetworkStatus();
+        });
+
+        onValue(ref(db, 'payments'), (snapshot) => {
+            const data = snapshot.val();
+            paymentsLog = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+            localStorage.setItem('HOTEL_SMART_payments', JSON.stringify(paymentsLog));
+            compileHomeDashboard();
+        });
+
+        onValue(ref(db, 'expenses'), (snapshot) => {
+            const data = snapshot.val();
+            expensesLog = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+            localStorage.setItem('HOTEL_SMART_expenses', JSON.stringify(expensesLog));
+            compileHomeDashboard();
+        });
+    </script>
+
+    <script>
+        // --- SECURISE & SESSION ---
+        // Vérification stricte immédiate de la validité de la session avant affichage complet
+        const sessionRaw = sessionStorage.getItem('HOTEL_SMART_auth');
+        if (!sessionRaw) {
+            window.location.href = 'login.html';
+        }
+        
+        const currentSession = JSON.parse(sessionRaw || '{}');
+        // Stockage du code secret de sécurité global
+        window.userSecurityCode = currentSession.code || "";
+
+        // Logique de la Sidebar Navigation Unifiée
+        const openMenuBtn = document.getElementById('openMenuBtn');
+        const closeMenuBtn = document.getElementById('closeMenuBtn');
+        const sidebarMenu = document.getElementById('sidebarMenu');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function openMenu() {
+            sidebarOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                sidebarOverlay.classList.remove('opacity-0');
+                sidebarOverlay.classList.add('opacity-100');
+                sidebarMenu.classList.remove('-translate-x-full');
+            }, 10);
+        }
+
+        function closeMenu() {
+            sidebarMenu.classList.add('-translate-x-full');
+            sidebarOverlay.classList.remove('opacity-100');
+            sidebarOverlay.classList.add('opacity-0');
+            setTimeout(() => {
+                sidebarOverlay.classList.add('hidden');
+            }, 300);
+        }
+
+        openMenuBtn.addEventListener('click', openMenu);
+        closeMenuBtn.addEventListener('click', closeMenu);
+        sidebarOverlay.addEventListener('click', closeMenu);
+
+        // --- Logique Métier d'Agrégation ---
+        let rooms = [];
+        let paymentsLog = [];
+        let expensesLog = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            applyUserSecurityRestrictions();
+            loadGlobalSettings();
+            importDataFromStorage();
+            compileHomeDashboard();
+            updateNetworkStatus();
+        });
+
+        // Filtrage dynamique des options du menu en fonction du profil d'autorisation
+        function applyUserSecurityRestrictions() {
+            if (!currentSession.role) return;
+
+            // Mise à jour de la zone de nom d'utilisateur dans la sidebar
+            const displaySpan = document.getElementById('sidebar-user-display');
+            if (displaySpan) {
+                displaySpan.innerText = `${currentSession.user || 'Utilisateur'} (${currentSession.role})`;
+            }
+
+            const role = currentSession.role;
+            if (role === 'Gérant' || role === 'Employé') {
+                // Masquer la configuration du PMS du menu de navigation
+                const navConfig = document.getElementById('nav-config');
+                if (navConfig) navConfig.style.display = 'none';
+
+                // Masquer la comptabilité du menu de navigation
+                const navCompta = document.getElementById('nav-compta');
+                if (navCompta) navCompta.style.display = 'none';
+
+                // Masquer le raccourci de sortie de caisse comptabilité du tableau de bord
+                const shortcutCompta = document.getElementById('shortcut-compta');
+                if (shortcutCompta) shortcutCompta.style.display = 'none';
+            }
+        }
+
+        function loadGlobalSettings() {
+            const companyData = JSON.parse(localStorage.getItem('HOTEL_SMART_company'));
+            if(companyData && companyData.name) {
+                document.getElementById('header-name-display').innerText = companyData.name;
+            }
+        }
+
+        function importDataFromStorage() {
+            rooms = JSON.parse(localStorage.getItem('HOTEL_SMART_rooms')) || [];
+            paymentsLog = JSON.parse(localStorage.getItem('HOTEL_SMART_payments')) || [];
+            expensesLog = JSON.parse(localStorage.getItem('HOTEL_SMART_expenses')) || [];
+        }
+
+        function compileHomeDashboard() {
+            // 1. Calculs des Chambres
+            const totalRooms = rooms.length;
+            const occupiedRooms = rooms.filter(r => r.client && r.client.trim() !== "" && r.status !== "Libre").length;
+            const occupancyRate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
+
+            document.getElementById('home-kpi-occupied').innerText = `${occupiedRooms} / ${totalRooms}`;
+            document.getElementById('home-kpi-rate').innerText = `${occupancyRate}%`;
+
+            // 2. Calculs de la Trésorerie Restante Directe
+            const totalIn = paymentsLog.reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
+            const totalOut = expensesLog.reduce((sum, e) => sum + (parseInt(e.amount) || 0), 0);
+            const netCash = totalIn - totalOut;
+            document.getElementById('home-kpi-cash').innerText = `${netCash.toLocaleString()} CFA`;
+
+            // 3. Compteur des mouvements d'écriture
+            const totalOps = paymentsLog.length + expensesLog.length;
+            document.getElementById('home-kpi-transactions').innerText = `${totalOps} op.`;
+
+            // 4. Rendu de la grille des statuts des chambres
+            const roomsContainer = document.getElementById('home-rooms-status-list');
+            if (totalRooms === 0) {
+                roomsContainer.innerHTML = `<p class="col-span-full text-center text-gray-400 italic py-2">Aucune chambre configurée.</p>`;
+                return;
+            }
+
+            roomsContainer.innerHTML = rooms.map(r => {
+                const isOccupied = r.client && r.client.trim() !== "" && r.status !== "Libre";
+                const bgState = isOccupied ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-gray-50 border-gray-200 text-gray-600";
+                const badgeDot = isOccupied ? "bg-emerald-500" : "bg-gray-400";
+                
+                return `
+                    <div class="p-3 rounded-xl border ${bgState} flex flex-col justify-between space-y-2 shadow-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="font-black text-sm">Ch. ${r.number}</span>
+                            <span class="w-2 h-2 rounded-full ${badgeDot}"></span>
+                        </div>
+                        <div class="text-[11px] truncate font-medium">
+                            ${isOccupied ? r.client : 'Disponible (Libre)'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateNetworkStatus() {
+            const statusToast = document.getElementById('network-status-toast');
+            if (!statusToast) return;
+            
+            if (navigator.onLine && window.isCloudConnected) {
+                statusToast.className = "text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold";
+                statusToast.innerText = "En ligne";
+            } else if (navigator.onLine && !window.isCloudConnected) {
+                statusToast.className = "text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse";
+                statusToast.innerText = "Synchro en cours...";
+            } else {
+                statusToast.className = "text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse";
+                statusToast.innerText = "Hors ligne";
+            }
+        }
+
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+
+        function logout() {
+            if(confirm("Quitter la session ?")) {
+                sessionStorage.removeItem('HOTEL_SMART_auth');
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>

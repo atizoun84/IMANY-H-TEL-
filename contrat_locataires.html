@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse des Clients - HotelSmart</title>
+    
+    <meta name="theme-color" content="#075E54">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HotelSmart">
+    <link class="apple-touch-icon" href="logo maison.png">
+    
+    <link class="manifest" href="manifest.json">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        whatsapp: {
+                            dark: '#075E54',
+                            teal: '#128C7E',
+                            light: '#25D366',
+                            bg: '#F0F2F5',
+                            card: '#FFFFFF'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex justify-center items-center p-0">
+
+    <div class="w-full bg-whatsapp-bg h-screen sm:rounded-none sm:shadow-none overflow-hidden flex flex-col relative border border-gray-200">
+        
+        <div id="sidebarOverlay" class="absolute inset-0 bg-black/50 z-40 hidden transition-opacity duration-300 opacity-0"></div>
+
+        <aside id="sidebarMenu" class="absolute top-0 bottom-0 left-0 w-64 bg-[#222e35] text-gray-300 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-2xl">
+            <div class="p-4 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal text-white flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-hotel text-xl"></i>
+                    <span class="font-bold text-sm tracking-wide">Menu Gestion</span>
+                </div>
+                <button id="closeMenuBtn" class="text-white text-xl focus:outline-none hover:opacity-80">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-none">
+                <a href="index.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-house w-5"></i>
+                    <span class="text-sm">Accueil</span>
+                </a>
+                <a href="contrats.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-bed w-5"></i>
+                    <span class="text-sm">Chambres</span>
+                </a>
+                <a href="contrat_locataires.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-whatsapp-teal text-white font-medium transition-colors">
+                    <i class="fa-solid fa-users w-5"></i>
+                    <span class="text-sm">Clients</span>
+                </a>
+                <a href="paiements.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-money-bill-wave w-5"></i>
+                    <span class="text-sm">Paiements</span>
+                </a>
+                <a href="comptabilite.html" id="nav-comptabilite" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-calculator w-5"></i>
+                    <span class="text-sm">Comptabilité</span>
+                </a>
+                <a href="recherche.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-magnifying-glass w-5"></i>
+                    <span class="text-sm">Recherche</span>
+                </a>
+                <div class="border-t border-gray-700/60 my-4"></div>
+                <a href="config.html" id="nav-config" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-gear w-5"></i>
+                    <span class="text-sm">Configuration PMS</span>
+                </a>
+                <div class="px-4 py-2 mt-2 bg-slate-800/40 rounded-xl border border-gray-700/30 flex flex-col">
+                    <span class="text-[11px] text-gray-400 uppercase font-bold tracking-wider">Session active</span>
+                    <span id="sidebar-auth-user" class="text-xs font-bold text-white truncate">Invité</span>
+                    <span id="sidebar-auth-role" class="text-[10px] text-whatsapp-light truncate">Utilisateur</span>
+                </div>
+                <a href="#" onclick="logout()" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-red-900/30 text-amber-500 transition-colors">
+                    <i class="fa-solid fa-sign-out-alt w-5"></i>
+                    <span class="text-sm">Quitter</span>
+                </a>
+            </nav>
+            <div class="p-4 border-t border-gray-700/60 text-xs text-gray-500 text-center" id="sidebar-user-info">
+                v1.2.0 - PWA Connect
+            </div>
+        </aside>
+
+        <header class="sticky top-0 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal px-4 pt-4 pb-3 flex justify-between items-center shadow-md z-30 shrink-0">
+            <button id="openMenuBtn" class="text-white text-xl focus:outline-none"><i class="fa-solid fa-bars"></i></button>
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <span id="header-name-display">HotelSmart</span>
+                <span id="network-status-toast" class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">Synchronisation...</span>
+            </h1>
+            <div class="flex items-center">
+                <img src="logo maison.png" alt="Logo" id="header-logo-display" class="w-10 h-10 object-contain rounded-full border border-white/20 bg-white/10 p-0.5" onerror="this.style.display='none';">
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-12">
+            
+            <div>
+                <h2 class="text-xl font-bold text-gray-900 flex items-center gap-1">
+                    Analyse Portefeuille Clients 📊
+                </h2>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Suivi de la fidélité, des compteeurs de séjours et contributions financières</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-whatsapp-teal/10 flex items-center justify-center text-whatsapp-teal text-lg">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Clients Uniques</p>
+                        <p id="kpi-total-clients" class="text-lg font-black text-gray-800">0</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600 text-lg">
+                        <i class="fa-solid fa-door-open"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Séjours Enregistrés</p>
+                        <p id="kpi-total-stays" class="text-lg font-black text-gray-800">0</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 text-lg">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Volume Encaissé Global</p>
+                        <p id="kpi-total-revenue" class="text-lg font-black text-emerald-600">0 CFA</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="best-client-card" class="bg-gradient-to-br from-amber-500 to-amber-600 p-4 rounded-2xl text-white shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hidden">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl text-amber-100 animate-bounce">
+                        <i class="fa-solid fa-crown"></i>
+                    </div>
+                    <div>
+                        <span class="bg-white/20 text-[9px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider">Meilleur Client Privilège</span>
+                        <h3 id="best-client-name" class="text-xl font-black tracking-tight mt-0.5">-</h3>
+                    </div>
+                </div>
+                <div class="text-left sm:text-right text-xs">
+                    <p class="opacity-80">Cumul des paiements</p>
+                    <p id="best-client-amount" class="text-lg font-black tracking-wide">- CFA</p>
+                    <p id="best-client-stays" class="text-[10px] opacity-90 mt-0.5 font-bold"></p>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-sm font-bold text-gray-800 flex items-center gap-1">
+                    <i class="fa-solid fa-address-book text-whatsapp-teal"></i> Registre de Performance et Fidélité des Clients
+                </h3>
+                <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-100 text-gray-500 font-bold">
+                                    <th class="p-3">Identité du Client</th>
+                                    <th class="p-3 text-center">Séjours</th>
+                                    <th class="p-3 text-center">Jours en cours</th>
+                                    <th class="p-3 text-right">Total Versé</th>
+                                    <th class="p-3 text-center">Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clients-analysis-rows" class="divide-y divide-gray-100 text-gray-700">
+                                <tr>
+                                    <td colspan="5" class="p-4 text-center text-gray-400 italic">Extraction des métriques en cours...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="bg-white text-gray-500 text-center py-4 border-t border-gray-200 text-xs mt-auto space-y-1 shrink-0">
+            <p class="font-bold text-gray-800">HotelSmart <span class="text-whatsapp-teal">Agencies</span></p>
+            <p class="text-[10px] opacity-60">&copy; 2026 - Tous droits réservés.</p>
+        </footer>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmlcMYeoeo4ESVWgzTC2zdq4lheqwbOyc",
+            authDomain: "imany-hotel.firebaseapp.com",
+            databaseURL: "https://imany-hotel-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "imany-hotel",
+            storageBucket: "imany-hotel.firebasestorage.app",
+            messagingSenderId: "941252716027",
+            appId: "1:941252716027:web:63b91f87c4f3fc7f07975e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.hotelData = { rooms: [], payments: [], company: {} };
+        window.userSecurityCode = null;
+
+        // Vérification de la session utilisateur basée sur login.html
+        function checkSession() {
+            const sessionData = sessionStorage.getItem('HOTEL_SMART_auth');
+            if (!sessionData) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            
+            try {
+                const session = JSON.parse(sessionData);
+                window.userSecurityCode = session.code || null;
+                return session;
+            } catch (e) {
+                sessionStorage.removeItem('HOTEL_SMART_auth');
+                window.location.href = 'login.html';
+                return null;
+            }
+        }
+
+        // Navigation dynamique selon le rôle adapté à la structure HOTEL_SMART_auth
+        function applyNavigationByRole() {
+            const session = checkSession();
+            if (!session) return;
+            
+            const userRole = session.role;
+            const navComptabilite = document.getElementById('nav-comptabilite');
+            const navConfig = document.getElementById('nav-config');
+            const sidebarUserInfo = document.getElementById('sidebar-user-info');
+            const sidebarAuthUser = document.getElementById('sidebar-auth-user');
+            const sidebarAuthRole = document.getElementById('sidebar-auth-role');
+            
+            // Afficher le nom de l'utilisateur connecté dans le widget dédié
+            if (sidebarAuthUser && sidebarAuthRole && session.user) {
+                sidebarAuthUser.innerText = session.user;
+                sidebarAuthRole.innerText = session.role || "Utilisateur";
+            }
+
+            // Afficher le nom de l'utilisateur connecté en bas du menu
+            if (sidebarUserInfo && session.user) {
+                sidebarUserInfo.innerHTML = `
+                    <div class="flex items-center justify-center space-x-1">
+                        <i class="fa-solid fa-circle text-[6px] text-emerald-400"></i>
+                        <span class="font-medium">Connecté en tant que ${session.user}</span>
+                    </div>
+                    <div class="text-[10px] opacity-70 mt-0.5">${session.role} • v1.2.0</div>
+                `;
+            }
+            
+            // Propriétaire : accès à tout
+            if (userRole === 'Propriétaire') {
+                if (navComptabilite) navComptabilite.style.display = 'flex';
+                if (navConfig) navConfig.style.display = 'flex';
+            }
+            // Gérant ou Employé : pas d'accès à config et comptabilité
+            else if (userRole === 'Gérant' || userRole === 'Employé') {
+                if (navComptabilite) navComptabilite.remove();
+                if (navConfig) navConfig.remove();
+            }
+        }
+
+        // Appliquer la navigation au chargement
+        applyNavigationByRole();
+
+        // Écouteur de l'état de connexion Firebase Realtime Database info/connected
+        onValue(ref(db, ".info/connected"), (snap) => {
+            const statusToast = document.getElementById('network-status-toast');
+            if (snap.val() === true) {
+                statusToast.className = "text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold";
+                statusToast.innerText = "En ligne";
+            } else {
+                statusToast.className = "text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse";
+                statusToast.innerText = "Hors ligne";
+            }
+        });
+
+        // Lecture des informations d'en-tête de la compagnie
+        onValue(ref(db, 'company_data'), (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.company && data.company.name) {
+                document.getElementById('header-name-display').innerText = data.company.name;
+            }
+        });
+
+        onValue(ref(db, "rooms"), (snapshot) => {
+            window.hotelData.rooms = Object.values(snapshot.val() || {});
+            window.processClientsAnalytics();
+        });
+
+        onValue(ref(db, "payments"), (snapshot) => {
+            window.hotelData.payments = Object.values(snapshot.val() || {});
+            window.processClientsAnalytics();
+        });
+    </script>
+
+    <script>
+        const openMenuBtn = document.getElementById('openMenuBtn');
+        const closeMenuBtn = document.getElementById('closeMenuBtn');
+        const sidebarMenu = document.getElementById('sidebarMenu');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function openMenu() {
+            sidebarOverlay.classList.remove('hidden');
+            setTimeout(() => { sidebarOverlay.classList.remove('opacity-0'); sidebarOverlay.classList.add('opacity-100'); sidebarMenu.classList.remove('-translate-x-full'); }, 10);
+        }
+
+        function closeMenu() {
+            sidebarMenu.classList.add('-translate-x-full');
+            sidebarOverlay.classList.remove('opacity-100'); sidebarOverlay.classList.add('opacity-0');
+            setTimeout(() => { sidebarOverlay.classList.add('hidden'); }, 300);
+        }
+
+        openMenuBtn.addEventListener('click', openMenu);
+        closeMenuBtn.addEventListener('click', closeMenu);
+        sidebarOverlay.addEventListener('click', closeMenu);
+
+        function calculateDays(arrivalDate) {
+            if (!arrivalDate) return 0;
+            const start = new Date(arrivalDate);
+            const today = new Date();
+            const diffTime = Math.abs(today - start);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        function processClientsAnalytics() {
+            const paymentsLog = window.hotelData.payments;
+            const rooms = window.hotelData.rooms;
+            let clientsMap = {};
+
+            paymentsLog.forEach(p => {
+                if (!p || !p.client) return;
+                const name = p.client.trim();
+                if (!clientsMap[name]) clientsMap[name] = { name: name, staysCount: 0, totalPaid: 0, activeDays: 0 };
+                clientsMap[name].totalPaid += (parseInt(p.amount) || 0);
+                clientsMap[name].staysCount += 1;
+            });
+
+            rooms.forEach(r => {
+                if (r.client && r.status === 'Occupée') {
+                    const name = r.client.trim();
+                    if (!clientsMap[name]) clientsMap[name] = { name: name, staysCount: 0, totalPaid: 0, activeDays: 0 };
+                    clientsMap[name].activeDays = calculateDays(r.arrivalDate);
+                }
+            });
+
+            const clientList = Object.values(clientsMap);
+            const globalRevenue = paymentsLog.reduce((sum, p) => sum + (p && p.amount ? (parseInt(p.amount) || 0) : 0), 0);
+            
+            document.getElementById('kpi-total-clients').innerText = clientList.length;
+            document.getElementById('kpi-total-stays').innerText = paymentsLog.length;
+            document.getElementById('kpi-total-revenue').innerText = `${globalRevenue.toLocaleString()} CFA`;
+
+            if (clientList.length > 0) {
+                let topClient = clientList.reduce((max, c) => (c.totalPaid > max.totalPaid) ? c : max, clientList[0]);
+                document.getElementById('best-client-name').innerText = topClient.name;
+                document.getElementById('best-client-amount').innerText = `${topClient.totalPaid.toLocaleString()} CFA`;
+                document.getElementById('best-client-stays').innerText = `🏆 Client Privilège`;
+                document.getElementById('best-client-card').classList.remove('hidden');
+            }
+
+            renderTable(clientList.sort((a, b) => b.totalPaid - a.totalPaid));
+        }
+
+        function renderTable(clientList) {
+            const container = document.getElementById('clients-analysis-rows');
+            container.innerHTML = clientList.map(c => {
+                let badgeHTML = c.totalPaid >= 150000 ? `<span class="bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full text-[9px]">OR</span>` : `<span class="bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-full text-[9px]">CLT</span>`;
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-bold text-gray-900">${c.name}</td>
+                        <td class="p-3 text-center"><span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-lg font-bold">${c.staysCount}</span></td>
+                        <td class="p-3 text-center font-black text-whatsapp-teal">${c.activeDays > 0 ? c.activeDays + 'j' : '-'}</td>
+                        <td class="p-3 text-right font-black text-gray-800">${c.totalPaid.toLocaleString()}</td>
+                        <td class="p-3 text-center">${badgeHTML}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.processClientsAnalytics = processClientsAnalytics;
+
+        function logout() { 
+            if(confirm("Quitter la session ?")) {
+                sessionStorage.removeItem('HOTEL_SMART_auth');
+                window.location.href = 'login.html'; 
+            }
+        }
+    </script>
+</body>
+</html>

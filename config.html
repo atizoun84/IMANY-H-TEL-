@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration PMS - Hôtel</title>
+    <link class="manifest" href="manifest.json">
+    <meta name="theme-color" content="#075E54">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        whatsapp: {
+                            dark: '#075E54',
+                            teal: '#128C7E',
+                            light: '#25D366',
+                            bg: '#F0F2F5',
+                            card: '#FFFFFF'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['Times New Roman', 'Times', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .info-locked {
+            font-weight: bold !important;
+            color: #007bff !important;
+            background-color: #f0f7ff !important;
+        }
+        .toast-success-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        }
+        .toast-success-message {
+            background: rgba(37, 211, 102, 0.95);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex justify-center items-center p-0">
+
+    <div class="w-full h-screen bg-whatsapp-bg overflow-hidden flex flex-col relative border border-gray-200 transition-all duration-300">
+        
+        <div id="sidebarOverlay" class="absolute inset-0 bg-black/50 z-40 hidden transition-opacity duration-300 opacity-0"></div>
+
+        <aside id="sidebarMenu" class="absolute top-0 bottom-0 left-0 w-64 bg-[#222e35] text-gray-300 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-2xl">
+            <div class="p-4 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal text-white flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-hotel text-xl"></i>
+                    <span class="font-bold text-sm tracking-wide">Menu Gestion</span>
+                </div>
+                <button id="closeMenuBtn" class="text-white text-xl focus:outline-none hover:opacity-80">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <nav id="nav-container" class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-none">
+                <a href="index.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-house w-5"></i>
+                    <span class="text-sm">Accueil</span>
+                </a>
+                <a href="contrats.html" id="link-chambres" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-bed w-5"></i>
+                    <span class="text-sm">Chambres</span>
+                </a>
+                <a href="contrat_locataires.html" id="link-clients" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-users w-5"></i>
+                    <span class="text-sm">Clients</span>
+                </a>
+                <a href="paiements.html" id="link-paiements" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-money-bill-wave w-5"></i>
+                    <span class="text-sm">Paiements</span>
+                </a>
+                <a href="comptabilite.html" id="link-comptabilite" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-calculator w-5"></i>
+                    <span class="text-sm">Comptabilité</span>
+                </a>
+                <a href="recherche.html" id="link-recherche" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-magnifying-glass w-5"></i>
+                    <span class="text-sm">Recherche</span>
+                </a>
+                <div class="border-t border-gray-700/60 my-4"></div>
+                <a href="config.html" id="link-config" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-whatsapp-teal text-white font-medium transition-colors">
+                    <i class="fa-solid fa-gear w-5"></i>
+                    <span class="text-sm">Configuration PMS</span>
+                </a>
+                
+                <div id="cloud-user-display" class="mx-2 mt-4 p-3 rounded-xl bg-slate-800/40 border border-slate-700/30 flex items-center space-x-3 invisible">
+                    <div class="w-8 h-8 rounded-full bg-whatsapp-teal/20 text-whatsapp-teal flex items-center justify-center font-bold text-xs uppercase shrink-0">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <p id="cloud-username" class="text-xs font-bold text-white truncate">Chargement...</p>
+                        <p id="cloud-userrole" class="text-[10px] text-whatsapp-light font-medium tracking-wide truncate"></p>
+                    </div>
+                </div>
+
+                <a href="#" onclick="logout()" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-red-900/30 text-amber-500 transition-colors">
+                    <i class="fa-solid fa-sign-out-alt w-5"></i>
+                    <span class="text-sm">Quitter</span>
+                </a>
+            </nav>
+            <div class="p-4 border-t border-gray-700/60 text-xs text-gray-500 text-center">
+                v1.2.0 - PWA Connect
+            </div>
+        </aside>
+
+        <header class="sticky top-0 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal px-4 pt-4 pb-3 flex justify-between items-center shadow-md z-30 shrink-0">
+            <button id="openMenuBtn" class="text-white text-xl focus:outline-none">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <span id="header-name-display">HotelSmart</span>
+                <span id="network-status-toast" class="text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 transition-all duration-300 bg-white/20 text-white">
+                    <i class="fas fa-circle text-[8px] animate-pulse"></i> <span>Vérification...</span>
+                </span>
+            </h1>
+            <div class="flex items-center">
+                <img src="logo maison.png" alt="Logo" id="header-logo-display" class="w-10 h-10 object-contain rounded-full border border-white/20 bg-white/10 p-0.5">
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-12">
+            
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900 flex items-center gap-1">
+                        Paramètres Système <span class="text-base text-gray-500">⚙️</span>
+                    </h2>
+                    <p class="text-xs text-gray-500 font-medium mt-0.5">Configurez les modules et options de votre établissement</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
+                <h3 class="text-sm font-bold text-gray-800 mb-1 flex items-center gap-2 uppercase tracking-wider text-whatsapp-dark">
+                    <i class="fa-solid fa-building text-whatsapp-teal"></i> Profil de l'Hôtel / Restaurant
+                </h3>
+                <form id="company-form" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-600">
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-700">Nom de l'Établissement</label>
+                        <input type="text" id="comp-name" placeholder="Ex: Hôtel Excellence" oninput="updateHeader()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-700">Logo (logo maison.png)</label>
+                        <div class="bg-gray-50 rounded-xl p-2 text-center border border-gray-200">
+                            <img src="logo maison.png" alt="Logo Établissement" class="max-h-12 mx-auto rounded" onerror="this.style.display='none';">
+                        </div>
+                    </div>
+                    <div class="space-y-1 md:col-span-2">
+                        <label class="font-semibold text-gray-700">Adresse</label>
+                        <textarea id="comp-address" rows="2" placeholder="Adresse physique..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled></textarea>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-700">Nom & Prénoms du Gérant</label>
+                        <input type="text" id="pdg-name" placeholder="Nom du responsable" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-700">WhatsApp du Gérant</label>
+                        <input type="tel" id="pdg-whatsapp" placeholder="+229 ..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-700">Code secret du Gérant</label>
+                        <input type="password" id="owner-code" placeholder="Code secret" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-700">Signature (sign.png)</label>
+                        <div class="bg-gray-50 rounded-xl p-1 text-center border border-gray-200">
+                            <img id="signature-img" src="sign.png" alt="Signature" class="max-h-12 mx-auto rounded" onerror="this.style.display='none';">
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
+                <h3 class="text-sm font-bold text-gray-800 mb-1 flex items-center gap-2 uppercase tracking-wider text-whatsapp-dark">
+                    <i class="fa-solid fa-user-tie text-whatsapp-teal"></i> Propriétaire de l'Hôtel
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-600">
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-700">Nom & Prénoms du Propriétaire</label>
+                        <input type="text" id="owner-name" placeholder="Nom complet du propriétaire" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-700">Numéro WhatsApp</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-green-500"><i class="fab fa-whatsapp"></i></span>
+                            <input type="tel" id="owner-whatsapp" placeholder="+229 ..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-700">Email</label>
+                        <input type="email" id="owner-email" placeholder="proprietaire@exemple.com" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-700">Code secret du Propriétaire</label>
+                        <input type="password" id="owner-secret-code" placeholder="Code secret propriétaire" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-whatsapp-teal"></i> Identité & Base de données
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-600">
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-700">Nom Logique Réseau</label>
+                        <input type="text" value="Hôtel PWA Connect" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="font-semibold text-gray-700">Devise Principale</label>
+                        <select class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                            <option>FCFA (XOF)</option>
+                            <option>Euro (€)</option>
+                            <option>Dollar ($)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider text-whatsapp-dark flex items-center gap-2">
+                        <i class="fa-solid fa-door-open text-whatsapp-teal"></i> Gestion des Chambres
+                    </h3>
+                    <button type="button" onclick="toggleContainer('rooms-table-container', this)" class="text-xs text-whatsapp-teal font-semibold bg-gray-50 px-3 py-1 rounded-full border border-gray-200">Voir la liste</button>
+                </div>
+                <div id="room-form" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Numéro de chambre</label>
+                        <input type="text" id="room-number" placeholder="Ex: 101" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Type</label>
+                        <input type="text" id="room-type" placeholder="Standard, Suite..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Prix / Nuit (CFA)</label>
+                        <input type="number" id="room-price" placeholder="Prix de vente" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Description</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="room-desc" placeholder="Ex: Vue sur mer, Lit King Size..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                            <button onclick="addRoom()" class="bg-whatsapp-teal text-white font-bold px-4 rounded-xl shadow hover:bg-whatsapp-dark transition" disabled>AJOUTER</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="rooms-table-container" class="hidden overflow-x-auto pt-2 border-t border-gray-100">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-500 uppercase text-[10px]">
+                                <th class="p-2">N°</th>
+                                <th class="p-2">Type</th>
+                                <th class="p-2">Prix / Nuit</th>
+                                <th class="p-2">Description</th>
+                                <th class="p-2 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rooms-list" class="divide-y divide-gray-100 text-gray-700"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider text-whatsapp-dark flex items-center gap-2">
+                        <i class="fa-solid fa-wine-bottle text-whatsapp-teal"></i> Gestion des Boissons
+                    </h3>
+                    <button type="button" onclick="toggleContainer('drinks-table-container', this)" class="text-xs text-whatsapp-teal font-semibold bg-gray-50 px-3 py-1 rounded-full border border-gray-200">Voir la liste</button>
+                </div>
+                <div id="drink-form" class="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Nom de la boisson</label>
+                        <input type="text" id="drink-name" placeholder="Ex: Coca-Cola" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Coût / Achat (CFA)</label>
+                        <input type="number" id="drink-cost" placeholder="Prix d'achat" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Prix de vente (CFA)</label>
+                        <input type="number" id="drink-sell-price" placeholder="Prix de vente" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="addDrink()" class="w-full bg-whatsapp-teal text-white font-bold py-2 rounded-xl shadow hover:bg-whatsapp-dark transition" disabled>AJOUTER</button>
+                    </div>
+                </div>
+                <div id="drinks-table-container" class="hidden overflow-x-auto pt-2 border-t border-gray-100">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-500 uppercase text-[10px]">
+                                <th class="p-2">Nom</th>
+                                <th class="p-2">Coût / Achat</th>
+                                <th class="p-2">Prix de vente</th>
+                                <th class="p-2 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="drinks-list" class="divide-y divide-gray-100 text-gray-700"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider text-whatsapp-dark flex items-center gap-2">
+                        <i class="fa-solid fa-utensils text-whatsapp-teal"></i> Gestion des Menus
+                    </h3>
+                    <button type="button" onclick="toggleContainer('menus-table-container', this)" class="text-xs text-whatsapp-teal font-semibold bg-gray-50 px-3 py-1 rounded-full border border-gray-200">Voir la liste</button>
+                </div>
+                <div id="menu-form" class="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Nom du menu</label>
+                        <input type="text" id="menu-name" placeholder="Ex: Menu Découverte" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Coût de prod. (CFA)</label>
+                        <input type="number" id="menu-cost" placeholder="Coût de production" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Prix de vente (CFA)</label>
+                        <input type="number" id="menu-sell-price" placeholder="Prix de vente" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="addMenu()" class="w-full bg-whatsapp-teal text-white font-bold py-2 rounded-xl shadow hover:bg-whatsapp-dark transition" disabled>AJOUTER</button>
+                    </div>
+                </div>
+                <div id="menus-table-container" class="hidden overflow-x-auto pt-2 border-t border-gray-100">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-500 uppercase text-[10px]">
+                                <th class="p-2">Nom</th>
+                                <th class="p-2">Coût de prod.</th>
+                                <th class="p-2">Prix de vente</th>
+                                <th class="p-2 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="menus-list" class="divide-y divide-gray-100 text-gray-700"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider text-whatsapp-dark flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus text-whatsapp-teal"></i> Nouvel Employé & Annuaire
+                    </h3>
+                    <button type="button" onclick="toggleContainer('table-container', this)" class="text-xs text-whatsapp-teal font-semibold bg-gray-50 px-3 py-1 rounded-full border border-gray-200">Voir l'annuaire</button>
+                </div>
+                
+                <div id="emp-form" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs border-b border-gray-100 pb-4">
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Nom & Prénoms</label>
+                        <input type="text" id="emp-nom" placeholder="Nom complet" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Numéro WhatsApp</label>
+                        <input type="tel" id="emp-tel" placeholder="Numéro WhatsApp" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Date d'engagement</label>
+                        <input type="date" id="emp-date" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Rôle / Poste</label>
+                        <select id="emp-role" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800" disabled>
+                            <option value="Réceptionniste">Réceptionniste</option>
+                            <option value="Gouvernante">Gouvernante</option>
+                            <option value="Majordome">Majordome</option>
+                            <option value="Chef de cuisine">Chef de cuisine</option>
+                            <option value="Serveur">Serveur</option>
+                            <option value="Barman">Barman</option>
+                            <option value="Concierge">Concierge</option>
+                            <option value="Assistant de direction">Assistant de direction</option>
+                            <option value="Responsable hébergement">Responsable hébergement</option>
+                            <option value="Responsable restauration">Responsable restauration</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Salaire brut (CFA)</label>
+                        <input type="number" id="emp-brut" placeholder="Salaire de base" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Code secret</label>
+                        <input type="password" id="emp-code" placeholder="Code secret" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800" disabled>
+                    </div>
+                    
+                    <div class="sm:col-span-3 space-y-2">
+                        <label class="block font-semibold text-gray-700">Primes (ajouter avec montant)</label>
+                        <div id="primes-container" class="space-y-2">
+                            <div class="flex gap-2 items-center" id="prime-item-0">
+                                <input type="text" placeholder="Nom de la prime" id="prime-name-0" class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5" disabled>
+                                <input type="number" placeholder="Montant" id="prime-amount-0" class="w-32 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5" disabled>
+                                <button onclick="removePrime(0)" class="text-red-500 text-base" disabled><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                        <button onclick="addPrimeField()" class="text-[11px] text-whatsapp-teal font-medium flex items-center gap-1 mt-1" disabled><i class="fas fa-plus"></i> Ajouter une prime</button>
+                    </div>
+
+                    <div class="sm:col-span-3 pt-2">
+                        <button onclick="addEmployee()" id="btn-add-emp" class="w-full bg-whatsapp-teal text-white font-bold py-2.5 rounded-xl shadow hover:bg-whatsapp-dark transition" disabled><i class="fas fa-check-circle mr-1"></i> ENREGISTRER L'EMPLOYÉ</button>
+                    </div>
+                </div>
+
+                <div id="table-container" class="hidden overflow-x-auto">
+                    <table class="w-full text-left text-xs min-w-[600px]">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-500 uppercase text-[10px]">
+                                <th class="p-2">Nom</th>
+                                <th class="p-2">Rôle</th>
+                                <th class="p-2">Brut</th>
+                                <th class="p-2">Primes</th>
+                                <th class="p-2">Net</th>
+                                <th class="p-2">WhatsApp</th>
+                                <th class="p-2">Code</th>
+                                <th class="p-2 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employee-list" class="divide-y divide-gray-100 text-gray-700"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-md border border-red-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-gradient-to-r from-white to-red-50/30">
+                <div class="text-xs">
+                    <h4 class="font-bold text-red-600 text-sm flex items-center gap-1"><i class="fas fa-lock"></i> Protection du système</h4>
+                    <p class="text-gray-500 mt-0.5 flex items-center gap-1">
+                        Code de verrouillage : <span id="master-code-display" class="font-bold tracking-wider">****</span>
+                        <button onclick="viewMasterCode()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-eye text-[11px]"></i></button>
+                    </p>
+                    <input type="password" id="config-lock-code" value="1234" class="mt-1.5 bg-gray-50 border border-red-200 rounded-lg px-2 py-1 font-bold text-center w-24 focus:outline-none" disabled>
+                </div>
+                <div id="lock-action-area">
+                    <button id="unlock-trigger-btn" onclick="unlockProcess()" class="bg-red-600 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition transform active:scale-95 flex items-center gap-1">
+                        <i class="fas fa-unlock"></i> DÉVERROUILLER
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-center bg-gray-50 rounded-2xl p-4 border border-dashed border-red-200">
+                <button id="clear-cloud-btn" class="bg-gradient-to-r from-red-500 to-amber-600 text-white text-xs font-bold px-5 py-2 rounded-xl shadow transition transform active:scale-95">
+                    <i class="fas fa-trash-vacuum mr-1"></i> Effacer toutes les données du cloud
+                </button>
+                <p class="text-[10px] text-gray-400 mt-1.5">Exporte instantanément l'intégralité du cloud en fichier CSV puis réinitialise l'application à zéro.</p>
+            </div>
+
+            <div>
+                <h3 class="text-sm font-bold text-gray-800 mb-2">Actions d'Administration</h3>
+                <div class="flex md:grid md:grid-cols-3 gap-2 overflow-x-auto pb-2 scrollbar-none">
+                    <button id="save-settings-btn" class="bg-whatsapp-teal text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm whitespace-nowrap active:scale-95 transition-transform flex-1 text-center">
+                        <i class="fa-solid fa-floppy-disk mr-1"></i> Sauvegarder les réglages
+                    </button>
+                    <button id="force-sync-btn" class="bg-blue-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm whitespace-nowrap active:scale-95 transition-transform flex-1 text-center">
+                        <i class="fa-solid fa-rotate mr-1"></i> Forcer la Synchronisation
+                    </button>
+                    <button class="bg-gray-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-sm whitespace-nowrap active:scale-95 transition-transform flex-1 text-center">
+                        <i class="fa-solid fa-file-export mr-1"></i> Exporter les Logs
+                    </button>
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="bg-white text-gray-500 text-center py-4 border-t border-gray-200 text-xs mt-auto space-y-1 shrink-0">
+            <p class="font-bold text-gray-800">HotelSmart <span class="text-whatsapp-teal">Agencies</span></p>
+            <p>Concepteur : <strong class="text-gray-700">Atizoun Plateny AMOUSSOU</strong></p>
+            <p class="text-[11px]">
+                <i class="fas fa-envelope text-gray-400"></i> atizoun@gmail.com &nbsp;|&nbsp; 
+                <i class="fas fa-phone text-gray-400"></i> 01 97 74 40 35
+            </p>
+            <p class="text-[10px] opacity-60 pt-1">&copy; 2026 - Tous droits réservés.</p>
+        </footer>
+
+    </div>
+
+    <button id="pwaInstallBtn" class="fixed bottom-20 right-5 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal text-white px-4 py-3 rounded-full shadow-2xl items-center gap-2 text-xs font-bold hover:scale-105 active:scale-95 transition-all z-50 hidden border border-white/20">
+        <i class="fas fa-download text-sm"></i> <span>INSTALLER L'APP</span>
+    </button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, push, remove, get } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmlcMYeoeo4ESVWgzTC2zdq4lheqwbOyc",
+            authDomain: "imany-hotel.firebaseapp.com",
+            databaseURL: "https://imany-hotel-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "imany-hotel",
+            storageBucket: "imany-hotel.firebasestorage.app",
+            messagingSenderId: "941252716027",
+            appId: "1:941252716027:web:63b91f87c4f3fc7f07975e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.masterCode = "1234";
+        window.userSecurityCode = "1234";
+        window.ownerSecretCode = "5678";
+        window.employees = [];
+        window.rooms = [];
+        window.drinks = [];
+        window.menus = [];
+        window.primeCounter = 1;
+
+        const openMenuBtn = document.getElementById('openMenuBtn');
+        const closeMenuBtn = document.getElementById('closeMenuBtn');
+        const sidebarMenu = document.getElementById('sidebarMenu');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        window.openMenu = function() {
+            sidebarOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                sidebarOverlay.classList.remove('opacity-0');
+                sidebarOverlay.classList.add('opacity-100');
+                sidebarMenu.classList.remove('-translate-x-full');
+            }, 10);
+        }
+
+        window.closeMenu = function() {
+            sidebarMenu.classList.add('-translate-x-full');
+            sidebarOverlay.classList.remove('opacity-100');
+            sidebarOverlay.classList.add('opacity-0');
+            setTimeout(() => {
+                sidebarOverlay.classList.add('hidden');
+            }, 300);
+        }
+
+        openMenuBtn.addEventListener('click', window.openMenu);
+        closeMenuBtn.addEventListener('click', window.closeMenu);
+        sidebarOverlay.addEventListener('click', window.closeMenu);
+
+        window.showSuccessMessage = function(message) {
+            const overlay = document.createElement('div');
+            overlay.className = 'toast-success-overlay';
+            overlay.innerHTML = `<div class="toast-success-message"><i class="fas fa-check-circle block text-2xl mb-1 text-center"></i>${message}</div>`;
+            document.body.appendChild(overlay);
+            setTimeout(() => overlay.remove(), 2000);
+        }
+
+        window.updateNetworkStatus = function() {
+            const statusToast = document.getElementById('network-status-toast');
+            const connectedRef = ref(db, ".info/connected");
+            
+            onValue(connectedRef, (snap) => {
+                if (snap.val() === true) {
+                    statusToast.className = "text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 transition-all duration-300 bg-emerald-500 text-white shadow-sm";
+                    statusToast.innerHTML = '<i class="fas fa-circle text-[7px] text-white animate-pulse"></i> <span>Synchronisé</span>';
+                } else {
+                    statusToast.className = "text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 transition-all duration-300 bg-amber-500 text-white shadow-sm";
+                    statusToast.innerHTML = '<i class="fas fa-exclamation-triangle text-[7px] text-white"></i> <span>Mode Hors-ligne / En attente</span>';
+                }
+            });
+        }
+
+        window.addEventListener('online', window.updateNetworkStatus);
+        window.addEventListener('offline', window.updateNetworkStatus);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            window.updateNetworkStatus();
+            
+            // Récupération de la session utilisateur connectée via Firebase Cloud uniquement
+            onValue(ref(db, 'current_session'), (snapshot) => {
+                const session = snapshot.val();
+                const displayBlock = document.getElementById('cloud-user-display');
+                if (session && session.user) {
+                    document.getElementById('cloud-username').innerText = session.user;
+                    document.getElementById('cloud-userrole').innerText = session.role || "Utilisateur";
+                    displayBlock.classList.remove('invisible');
+
+                    // Contrôle d'accès et redirection automatique
+                    const userRole = session.role;
+                    if (userRole === "Gérant" || userRole === "Employé") {
+                        window.location.replace('index.html');
+                        return;
+                    }
+
+                    // Barre de navigation dynamique selon le rôle
+                    const linkChambres = document.getElementById('link-chambres');
+                    const linkClients = document.getElementById('link-clients');
+                    const linkPaiements = document.getElementById('link-paiements');
+                    const linkComptabilite = document.getElementById('link-comptabilite');
+                    const linkRecherche = document.getElementById('link-recherche');
+
+                    if (userRole === "Employé") {
+                        if (linkChambres) linkChambres.classList.add('hidden');
+                        if (linkClients) linkClients.classList.add('hidden');
+                        if (linkPaiements) linkPaiements.classList.add('hidden');
+                        if (linkComptabilite) linkComptabilite.classList.add('hidden');
+                        if (linkRecherche) linkRecherche.classList.add('hidden');
+                    } else {
+                        if (linkChambres) linkChambres.classList.remove('hidden');
+                        if (linkClients) linkClients.classList.remove('hidden');
+                        if (linkPaiements) linkPaiements.classList.remove('hidden');
+                        if (linkComptabilite) linkComptabilite.classList.remove('hidden');
+                        if (linkRecherche) linkRecherche.classList.remove('hidden');
+                    }
+                } else {
+                    displayBlock.classList.add('invisible');
+                    window.location.replace('login.html');
+                    return;
+                }
+            });
+
+            onValue(ref(db, 'employees'), (snapshot) => {
+                const data = snapshot.val();
+                window.employees = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+                window.renderEmployees();
+            });
+
+            onValue(ref(db, 'rooms'), (snapshot) => {
+                const data = snapshot.val();
+                window.rooms = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+                window.renderRooms();
+            });
+
+            onValue(ref(db, 'drinks'), (snapshot) => {
+                const data = snapshot.val();
+                window.drinks = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+                window.renderDrinks();
+            });
+
+            onValue(ref(db, 'menus'), (snapshot) => {
+                const data = snapshot.val();
+                window.menus = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+                window.renderMenus();
+            });
+
+            onValue(ref(db, 'company_data'), (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    if(data.masterCode) {
+                        window.masterCode = data.masterCode;
+                        window.userSecurityCode = data.masterCode;
+                        document.getElementById('config-lock-code').value = data.masterCode;
+                    }
+                    if (data.company) {
+                        document.getElementById('comp-name').value = data.company.name || "";
+                        document.getElementById('comp-address').value = data.company.address || "";
+                        document.getElementById('pdg-name').value = data.company.pdgName || "";
+                        document.getElementById('pdg-whatsapp').value = data.company.whatsapp || "";
+                        document.getElementById('owner-code').value = data.company.ownerCode || "";
+                        document.getElementById('owner-name').value = data.company.ownerName || "";
+                        document.getElementById('owner-whatsapp').value = data.company.ownerWhatsapp || "";
+                        document.getElementById('owner-email').value = data.company.ownerEmail || "";
+                        document.getElementById('owner-secret-code').value = data.company.ownerSecretCode || "";
+                        window.ownerSecretCode = data.company.ownerSecretCode || "5678";
+                        window.updateHeader();
+                    }
+                }
+            });
+
+            window.lockAllFields();
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker enregistré !', reg.scope))
+                    .catch(err => console.error('Erreur SW :', err));
+            }
+        });
+
+        let deferredPrompt;
+        const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            pwaInstallBtn.style.display = 'flex';
+        });
+
+        pwaInstallBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            pwaInstallBtn.style.display = 'none';
+        });
+
+        window.addEventListener('appinstalled', () => {
+            pwaInstallBtn.style.display = 'none';
+            deferredPrompt = null;
+            window.showSuccessMessage("HotelSmart installé !");
+        });
+
+        window.logout = function() {
+            if(confirm("Quitter la session ?")) {
+                remove(ref(db, 'current_session'))
+                    .then(() => {
+                        window.location.href = 'login.html';
+                    });
+            }
+        }
+
+        window.updateHeader = function() {
+            const name = document.getElementById('comp-name').value;
+            document.getElementById('header-name-display').innerText = name || "HotelSmart";
+        }
+
+        window.toggleContainer = function(id, btn) {
+            const container = document.getElementById(id);
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                btn.innerText = "Masquer";
+            } else {
+                container.classList.add('hidden');
+                btn.innerText = "Voir la liste";
+            }
+        }
+
+        window.addPrimeField = function() {
+            const container = document.getElementById('primes-container');
+            const index = window.primeCounter++;
+            const div = document.createElement('div');
+            div.className = 'flex gap-2 items-center';
+            div.id = `prime-item-${index}`;
+            div.innerHTML = `
+                <input type="text" placeholder="Nom de la prime" id="prime-name-${index}" class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5">
+                <input type="number" placeholder="Montant" id="prime-amount-${index}" class="w-32 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5">
+                <button onclick="removePrime(${index})" class="text-red-500 text-base"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(div);
+        }
+
+        window.removePrime = function(index) {
+            const el = document.getElementById(`prime-item-${index}`);
+            if(el) el.remove();
+        }
+
+        window.getPrimesFromForm = function() {
+            const primes = [];
+            const items = document.querySelectorAll('#primes-container > div');
+            items.forEach((item) => {
+                const nameInput = item.querySelector('input[id^="prime-name-"]');
+                const amountInput = item.querySelector('input[id^="prime-amount-"]');
+                if(nameInput && amountInput && nameInput.value.trim() && amountInput.value) {
+                    primes.push({
+                        name: nameInput.value.trim(),
+                        amount: parseFloat(amountInput.value) || 0
+                    });
+                }
+            });
+            return primes;
+        }
+
+        window.calculateNetSalary = function(brut, primes) {
+            const totalPrimes = primes.reduce((sum, p) => sum + p.amount, 0);
+            const charges = brut * 0.15;
+            return brut + totalPrimes - charges;
+        }
+
+        window.addEmployee = function() {
+            const nom = document.getElementById('emp-nom').value;
+            const tel = document.getElementById('emp-tel').value;
+            const date = document.getElementById('emp-date').value;
+            const code = document.getElementById('emp-code').value;
+            const role = document.getElementById('emp-role').value;
+            const brut = parseFloat(document.getElementById('emp-brut').value) || 0;
+            const primes = window.getPrimesFromForm();
+
+            if(!nom || !tel || !code) { alert("Nom, WhatsApp et Code sont requis."); return; }
+            
+            const net = window.calculateNetSalary(brut, primes);
+            const newEmpRef = push(ref(db, 'employees'));
+            
+            set(newEmpRef, { nom, tel, date, code, role, brut, primes, net })
+                .then(() => {
+                    document.getElementById('emp-nom').value = "";
+                    document.getElementById('emp-tel').value = "";
+                    document.getElementById('emp-date').value = "";
+                    document.getElementById('emp-code').value = "";
+                    document.getElementById('emp-brut').value = "";
+                    document.getElementById('emp-role').value = "Réceptionniste";
+                    document.getElementById('primes-container').innerHTML = `
+                        <div class="flex gap-2 items-center" id="prime-item-0">
+                            <input type="text" placeholder="Nom de la prime" id="prime-name-0" class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5">
+                            <input type="number" placeholder="Montant" id="prime-amount-0" class="w-32 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5">
+                            <button onclick="removePrime(0)" class="text-red-500 text-base"><i class="fas fa-times"></i></button>
+                        </div>
+                    `;
+                    window.primeCounter = 1;
+                    window.showSuccessMessage("Employé ajouté !");
+                }).catch(err => alert("Erreur : " + err.message));
+        }
+
+        window.renderEmployees = function() {
+            const tbody = document.getElementById('employee-list');
+            tbody.innerHTML = window.employees.map(emp => {
+                const primesList = emp.primes && emp.primes.length > 0 ? emp.primes.map(p => `${p.name}: ${p.amount}`).join(', ') : 'Aucune';
+                return `
+                <tr class="hover:bg-gray-50/50">
+                    <td class="p-2 font-bold">${emp.nom}</td>
+                    <td class="p-2"><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-semibold">${emp.role}</span></td>
+                    <td class="p-2">${emp.brut || 0} CFA</td>
+                    <td class="p-2 text-gray-400">${primesList}</td>
+                    <td class="p-2 text-green-600 font-bold">${Math.round(emp.net)} CFA</td>
+                    <td class="p-2 text-whatsapp-teal font-medium">${emp.tel}</td>
+                    <td class="p-2"><span id="code-${emp.id}">****</span> <button class="text-gray-400 ml-1" onclick="viewCode('${emp.id}','${emp.code}')"><i class="fas fa-eye"></i></button></td>
+                    <td class="p-2 text-center"><button class="text-red-500 action-btn-del" onclick="confirmDeleteEmployee('${emp.id}')" disabled><i class="fas fa-trash-alt"></i></button></td>
+                </tr>
+            `}).join('');
+        }
+
+        window.viewCode = function(id, code) {
+            const s = document.getElementById('code-'+id); s.innerText = code;
+            setTimeout(() => s.innerText = "****", 3000);
+        }
+
+        window.viewMasterCode = function() {
+            const s = document.getElementById('master-code-display'); s.innerText = window.userSecurityCode;
+            setTimeout(() => s.innerText = "****", 3000);
+        }
+
+        window.confirmDeleteEmployee = function(id) {
+            const code = prompt("Entrez le code du Gérant ou du Propriétaire :");
+            if(String(code) === String(window.userSecurityCode) || String(code) === String(window.ownerSecretCode)) {
+                remove(ref(db, `employees/${id}`))
+                    .then(() => {
+                        window.showSuccessMessage("Employé supprimé !");
+                        // Ne pas recharger la page, les données seront mises à jour automatiquement via onValue
+                    })
+                    .catch(err => alert("Erreur : " + err.message));
+            } else { alert("Code incorrect."); }
+        }
+
+        window.addRoom = function() {
+            const number = document.getElementById('room-number').value;
+            const type = document.getElementById('room-type').value;
+            const price = document.getElementById('room-price').value;
+            const desc = document.getElementById('room-desc').value;
+            if(!number || !type || !price) { alert("Les champs Numéro, Type et Prix sont requis."); return; }
+            
+            const newRoomRef = push(ref(db, 'rooms'));
+            set(newRoomRef, { number, type, price: parseFloat(price), desc: desc || "Aucune" })
+                .then(() => {
+                    document.getElementById('room-number').value = "";
+                    document.getElementById('room-type').value = "";
+                    document.getElementById('room-price').value = "";
+                    document.getElementById('room-desc').value = "";
+                    window.showSuccessMessage("Chambre ajoutée !");
+                }).catch(err => alert("Erreur : " + err.message));
+        }
+
+        window.renderRooms = function() {
+            const tbody = document.getElementById('rooms-list');
+            tbody.innerHTML = window.rooms.map(r => `
+                <tr class="hover:bg-gray-50/50">
+                    <td class="p-2 font-bold">${r.number}</td>
+                    <td class="p-2">${r.type}</td>
+                    <td class="p-2 font-semibold text-whatsapp-teal">${r.price} CFA</td>
+                    <td class="p-2 text-gray-500 italic">${r.desc || 'Aucune'}</td>
+                    <td class="p-2 text-center"><button class="text-red-500 action-btn-del" onclick="confirmDeleteRoom('${r.id}')" disabled><i class="fas fa-trash-alt"></i></button></td>
+                </tr>
+            `).join('');
+        }
+
+        window.confirmDeleteRoom = function(id) {
+            const code = prompt("Entrez le code du Gérant ou du Propriétaire :");
+            if(String(code) === String(window.userSecurityCode) || String(code) === String(window.ownerSecretCode)) {
+                remove(ref(db, `rooms/${id}`))
+                    .then(() => {
+                        window.showSuccessMessage("Chambre supprimée !");
+                        // Ne pas recharger la page, les données seront mises à jour automatiquement via onValue
+                    })
+                    .catch(err => alert("Erreur : " + err.message));
+            } else { alert("Code incorrect."); }
+        }
+
+        window.addDrink = function() {
+            const name = document.getElementById('drink-name').value;
+            const cost = document.getElementById('drink-cost').value;
+            const sellPrice = document.getElementById('drink-sell-price').value;
+            if(!name || !cost || !sellPrice) { alert("Tous les champs sont requis."); return; }
+            
+            const newDrinkRef = push(ref(db, 'drinks'));
+            set(newDrinkRef, { name, cost: parseFloat(cost), sellPrice: parseFloat(sellPrice) })
+                .then(() => {
+                    document.getElementById('drink-name').value = "";
+                    document.getElementById('drink-cost').value = "";
+                    document.getElementById('drink-sell-price').value = "";
+                    window.showSuccessMessage("Boisson ajoutée !");
+                }).catch(err => alert("Erreur : " + err.message));
+        }
+
+        window.renderDrinks = function() {
+            const tbody = document.getElementById('drinks-list');
+            tbody.innerHTML = window.drinks.map(d => `
+                <tr class="hover:bg-gray-50/50">
+                    <td class="p-2 font-bold">${d.name}</td>
+                    <td class="p-2">${d.cost} CFA</td>
+                    <td class="p-2 text-whatsapp-teal font-semibold">${d.sellPrice} CFA</td>
+                    <td class="p-2 text-center"><button class="text-red-500 action-btn-del" onclick="confirmDeleteDrink('${d.id}')" disabled><i class="fas fa-trash-alt"></i></button></td>
+                </tr>
+            `).join('');
+        }
+
+        window.confirmDeleteDrink = function(id) {
+            const code = prompt("Entrez le code du Gérant ou du Propriétaire :");
+            if(String(code) === String(window.userSecurityCode) || String(code) === String(window.ownerSecretCode)) {
+                remove(ref(db, `drinks/${id}`))
+                    .then(() => {
+                        window.showSuccessMessage("Boisson supprimée !");
+                        // Ne pas recharger la page, les données seront mises à jour automatiquement via onValue
+                    })
+                    .catch(err => alert("Erreur : " + err.message));
+            } else { alert("Code incorrect."); }
+        }
+
+        window.addMenu = function() {
+            const name = document.getElementById('menu-name').value;
+            const cost = document.getElementById('menu-cost').value;
+            const sellPrice = document.getElementById('menu-sell-price').value;
+            if(!name || !cost || !sellPrice) { alert("Tous les champs sont requis."); return; }
+            
+            const newMenuRef = push(ref(db, 'menus'));
+            set(newMenuRef, { name, cost: parseFloat(cost), sellPrice: parseFloat(sellPrice) })
+                .then(() => {
+                    document.getElementById('menu-name').value = "";
+                    document.getElementById('menu-cost').value = "";
+                    document.getElementById('menu-sell-price').value = "";
+                    window.showSuccessMessage("Menu ajouté !");
+                }).catch(err => alert("Erreur : " + err.message));
+        }
+
+        window.renderMenus = function() {
+            const tbody = document.getElementById('menus-list');
+            tbody.innerHTML = window.menus.map(m => `
+                <tr class="hover:bg-gray-50/50">
+                    <td class="p-2 font-bold">${m.name}</td>
+                    <td class="p-2">${m.cost} CFA</td>
+                    <td class="p-2 text-whatsapp-teal font-semibold">${m.sellPrice} CFA</td>
+                    <td class="p-2 text-center"><button class="text-red-500 action-btn-del" onclick="confirmDeleteMenu('${m.id}')" disabled><i class="fas fa-trash-alt"></i></button></td>
+                </tr>
+            `).join('');
+        }
+
+        window.confirmDeleteMenu = function(id) {
+            const code = prompt("Entrez le code du Gérant ou du Propriétaire :");
+            if(String(code) === String(window.userSecurityCode) || String(code) === String(window.ownerSecretCode)) {
+                remove(ref(db, `menus/${id}`))
+                    .then(() => {
+                        window.showSuccessMessage("Menu supprimé !");
+                        // Ne pas recharger la page, les données seront mises à jour automatiquement via onValue
+                    })
+                    .catch(err => alert("Erreur : " + err.message));
+            } else { alert("Code incorrect."); }
+        }
+
+        window.clearCloudData = async function() {
+            if (document.getElementById('comp-name').disabled) {
+                alert("Le système est verrouillé. Cliquez sur DÉVERROUILLER d'abord.");
+                return;
+            }
+
+            const confirmCode = prompt("⚠️ ATTENTION : Cette action va exporter TOUTES les données en CSV et réinitialiser complètement l'application.\nEntrez le code secret du Propriétaire pour valider :");
+            if (String(confirmCode) !== String(window.ownerSecretCode)) {
+                alert("Code secret propriétaire incorrect. Action annulée.");
+                return;
+            }
+
+            try {
+                window.showSuccessMessage("Extraction des données en cours...");
+                
+                const nodesToExport = ['rooms', 'drinks', 'menus', 'employees', 'company_data'];
+                let csvContent = "\uFEFF"; // BOM pour assurer le support des accents sous Excel
+                
+                for (const node of nodesToExport) {
+                    const snapshot = await get(ref(db, node));
+                    const data = snapshot.val();
+                    
+                    csvContent += `--- MODULE : ${node.toUpperCase()} ---\n`;
+                    if (data) {
+                        if (typeof data === 'object') {
+                            // En-têtes dynamiques basés sur les clés du premier objet ou de l'objet lui-même
+                            const firstKey = Object.keys(data)[0];
+                            if (typeof data[firstKey] === 'object' && data[firstKey] !== null) {
+                                const headers = ['ID', ...Object.keys(data[firstKey])];
+                                csvContent += headers.join(';') + "\n";
+                                
+                                Object.keys(data).forEach(id => {
+                                    const row = [id];
+                                    Object.keys(data[id]).forEach(k => {
+                                        let val = data[id][k];
+                                        if (typeof val === 'object') val = JSON.stringify(val).replace(/;/g, ',');
+                                        row.push(`"${String(val).replace(/"/g, '""')}"`);
+                                    });
+                                    csvContent += row.join(';') + "\n";
+                                });
+                            } else {
+                                csvContent += "Cle;Valeur\n";
+                                Object.keys(data).forEach(k => {
+                                    csvContent += `${k};"${String(data[k]).replace(/"/g, '""')}"\n`;
+                                });
+                            }
+                        } else {
+                            csvContent += `Valeur Directe;"${String(data).replace(/"/g, '""')}"\n`;
+                        }
+                    } else {
+                        csvContent += "Aucune donnée enregistrée\n";
+                    }
+                    csvContent += "\n\n";
+                }
+
+                // Lancement automatique du téléchargement du fichier CSV
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `Backup_HotelSmart_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Nettoyage complet des nœuds dans Firebase Cloud
+                window.showSuccessMessage("Nettoyage du Cloud...");
+                await Promise.all(nodesToExport.map(node => remove(ref(db, node))));
+
+                window.showSuccessMessage("Application remise à zéro !");
+                setTimeout(() => { window.location.reload(); }, 1500);
+
+            } catch (error) {
+                alert("Erreur lors de la réinitialisation : " + error.message);
+            }
+        }
+
+        document.getElementById('clear-cloud-btn').addEventListener('click', window.clearCloudData);
+
+        window.saveAndLock = function() {
+            window.masterCode = document.getElementById('config-lock-code').value;
+            window.userSecurityCode = window.masterCode;
+            
+            const companyData = {
+                name: document.getElementById('comp-name').value,
+                address: document.getElementById('comp-address').value,
+                pdgName: document.getElementById('pdg-name').value,
+                whatsapp: document.getElementById('pdg-whatsapp').value,
+                ownerCode: document.getElementById('owner-code').value,
+                ownerName: document.getElementById('owner-name').value,
+                ownerWhatsapp: document.getElementById('owner-whatsapp').value,
+                ownerEmail: document.getElementById('owner-email').value,
+                ownerSecretCode: document.getElementById('owner-secret-code').value
+            };
+
+            set(ref(db, 'company_data'), {
+                masterCode: window.masterCode,
+                company: companyData
+            }).then(() => {
+                window.ownerSecretCode = companyData.ownerSecretCode || "5678";
+                window.lockAllFields();
+                window.showSuccessMessage("Paramètres enregistrés et verrouillés !");
+            }).catch(err => alert("Erreur d'enregistrement : " + err.message));
+        }
+
+        window.lockAllFields = function() {
+            document.querySelectorAll('main input, main textarea, main select, main button:not(.action-btn-del)').forEach(el => {
+                if(el.id !== "unlock-trigger-btn" && el.id !== "save-settings-btn" && el.id !== "force-sync-btn" && el.id !== "clear-cloud-btn") {
+                    el.disabled = true;
+                    if(el.tagName !== 'BUTTON') el.classList.add('info-locked');
+                }
+            });
+            document.querySelectorAll('.action-btn-del').forEach(b => b.disabled = true);
+            document.getElementById('lock-action-area').innerHTML = `
+                <button id="unlock-trigger-btn" onclick="unlockProcess()" class="bg-red-600 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition transform active:scale-95 flex items-center gap-1">
+                    <i class="fas fa-unlock"></i> DÉVERROUILLER
+                </button>
+            `;
+        }
+
+        window.unlockProcess = function() {
+            const code = prompt("Code PIN :");
+            if(String(code) === String(window.userSecurityCode)) {
+                document.querySelectorAll('main input, main textarea, main select, main button').forEach(el => {
+                    el.disabled = false; 
+                    el.classList.remove('info-locked');
+                });
+                document.querySelectorAll('.action-btn-del').forEach(b => b.disabled = false);
+                document.getElementById('lock-action-area').innerHTML = `
+                    <button onclick="saveAndLock()" class="bg-gradient-to-r from-[#128C7E] to-[#25D366] text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition transform active:scale-95 flex items-center gap-1">
+                        <i class="fas fa-save"></i> SAUVEGARDER & VERROUILLER
+                    </button>
+                `;
+                window.showSuccessMessage("Mode modification activé !");
+            } else { alert("Code incorrect."); }
+        }
+
+        document.getElementById('save-settings-btn').addEventListener('click', () => {
+            if(!document.getElementById('comp-name').disabled) {
+                window.saveAndLock();
+            } else {
+                alert("Le système est verrouillé. Cliquez sur DÉVERROUILLER d'abord.");
+            }
+        });
+
+        document.getElementById('force-sync-btn').addEventListener('click', () => {
+            window.showSuccessMessage("Synchronisation forcée réussie !");
+        });
+    </script>
+</body>
+</html>

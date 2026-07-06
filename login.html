@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - HotelSmart</title>
+    
+    <meta name="theme-color" content="#075E54">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HotelSmart">
+    <link class="apple-touch-icon" href="logo maison.png">
+    
+    <link class="manifest" href="manifest.json">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Poppins:wght@300;400;600&family=Montserrat:wght@800&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root { --wa-dark: #075E54; --wa-medium: #128C7E; --wa-light: #25D366; --wa-bg: #F0F2F5; --font-main: 'Poppins', sans-serif; --font-title: 'Playfair Display', serif; }
+        body { background-color: var(--wa-bg); font-family: var(--font-main); color: #333; display: flex; flex-direction: column; min-height: 100vh; justify-content: center; align-items: center; }
+        .login-card { width: 100%; max-width: 450px; background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        .login-logo { height: 140px; margin-bottom: 20px; }
+        .btn-wa { background-color: var(--wa-medium); color: white; border: none; width: 100%; font-weight: 600; padding: 10px; }
+        .btn-wa:hover { background-color: var(--wa-dark); color: white; }
+        .app-description { font-size: 0.85rem; color: #666; margin-bottom: 20px; }
+        .btn-link-sm { font-size: 0.8rem; color: var(--wa-dark); text-decoration: none; margin-top: 15px; display: inline-block; cursor: pointer; }
+        #success-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; justify-content: center; align-items: center; flex-direction: column; transition: all 0.3s ease; backdrop-filter: blur(5px); }
+        .fw-bold-select { font-weight: 700 !important; color: var(--wa-dark); }
+        .company-special-font { font-family: 'Orbitron', sans-serif; font-size: 1.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        #network-status-indicator { position: fixed; top: 15px; right: 15px; z-index: 3000; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.3s ease; }
+        .status-online { background-color: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
+        .status-offline { background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+        .status-syncing { background-color: #fff3cd; color: #664d03; border: 1px solid #ffecb5; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .status-online .status-dot { background-color: #198754; animation: pulse 2s infinite; }
+        .status-offline .status-dot { background-color: #dc3545; }
+        .status-syncing .status-dot { background-color: #ffc107; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.95); opacity: 1; } 50% { transform: scale(1.15); opacity: 0.7; } 100% { transform: scale(0.95); opacity: 1; } }
+        #pwa-install-btn { position: fixed; bottom: 20px; left: 20px; z-index: 3000; background-color: var(--wa-medium); color: white; border: none; padding: 12px 18px; border-radius: 30px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: none; align-items: center; gap: 8px; transition: all 0.3s ease; }
+        #pwa-install-btn:hover { background-color: var(--wa-dark); transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+
+    <div id="network-status-indicator" class="status-online">
+        <span class="status-dot"></span>
+        <span id="network-status-text">En ligne</span>
+    </div>
+
+    <div id="success-overlay">
+        <i class="fa-solid fa-circle-check" style="font-size: 5rem; color: white;"></i>
+        <h4 class="mt-3 fw-bold text-white" id="overlay-text">Accès autorisé</h4>
+    </div>
+
+    <button id="pwa-install-btn">
+        <i class="fa-solid fa-download"></i> Installer l'application
+    </button>
+
+    <div class="login-card">
+        <div class="mb-3 justify-content-center d-flex align-items-center gap-2">
+            <div class="rounded-3 d-flex align-items-center justify-content-center text-white shadow-sm" style="width: 45px; height: 45px; background: linear-gradient(to top right, var(--wa-dark), var(--wa-medium));">
+                <i class="fa-solid fa-hotel fs-5"></i>
+            </div>
+            <h3 class="mb-0 font-black tracking-wider text-gray-800 fw-bold">Hotel<span style="color: var(--wa-medium);">Smart</span></h3>
+        </div>
+        <h4 class="mb-2" style="color: var(--wa-dark); font-family: var(--font-title);">Ravi de vous revoir 👋</h4>
+        <p class="app-description">Sélectionnez votre profil d'accès pour ouvrir votre session de gestion.</p>
+        
+        <div id="company-dynamic-header" class="mb-4 text-center d-none">
+            <img id="company-logo-display" src="logo maison.png" alt="Logo Entreprise" class="login-logo d-block mx-auto img-fluid" style="max-height: 140px; object-fit: contain;">
+            <h5 id="company-name-display" class="fw-bold mt-2 mb-0 text-uppercase tracking-wide company-special-font" style="color: var(--wa-dark);"></h5>
+        </div>
+
+        <form id="loginForm">
+            <div class="mb-3 text-start">
+                <label class="form-label small fw-bold">Niveau d'accès</label>
+                <select id="userSelect" class="form-select" required>
+                    <option value="">Sélectionnez votre profil...</option>
+                </select>
+            </div>
+            <div class="mb-4 text-start">
+                <label class="form-label small fw-bold">Code secret d'accès (PIN)</label>
+                <input type="password" id="passwordInput" class="form-control text-center tracking-widest fw-bold" placeholder="••••" maxlength="8" required>
+            </div>
+            <button type="submit" class="btn btn-wa"><i class="fa-solid fa-right-to-bracket me-2"></i>SE CONNECTER À L'APPLICATION</button>
+        </form>
+
+        <a class="btn-link-sm" data-bs-toggle="modal" data-bs-target="#adminModal">
+            <i class="fa-solid fa-users-gear me-1"></i>Gestion des codes d'accès
+        </a>
+    </div>
+
+    <div class="modal fade" id="adminModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Administration des accès</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body" id="modalBody">
+                    <div id="authSection">
+                        <input type="password" id="adminAuthPass" class="form-control mb-2" placeholder="Code secret Propriétaire">
+                        <button class="btn btn-wa" onclick="verifyAdminAccess()">Accéder aux comptes</button>
+                    </div>
+                    <div id="userManagementSection" style="display:none;">
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle" style="white-space: nowrap;">
+                                <thead><tr><th>Nom / Rôle</th><th>Type d'accès</th><th>Code Secret (PIN)</th></tr></thead>
+                                <tbody id="userTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="text-end mt-3">
+                            <button class="btn btn-wa" onclick="saveUserPasswords()"><i class="fa-solid fa-floppy-disk me-2"></i>Valider les modifications</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmlcMYeoeo4ESVWgzTC2zdq4lheqwbOyc",
+            authDomain: "imany-hotel.firebaseapp.com",
+            databaseURL: "https://imany-hotel-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "imany-hotel",
+            storageBucket: "imany-hotel.firebasestorage.app",
+            messagingSenderId: "941252716027",
+            appId: "1:941252716027:web:63b91f87c4f3fc7f07975e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.FirebaseStorage = {
+            saveConfig: function(configData) {
+                set(ref(db, 'company_data'), { masterCode: configData.masterCode, company: configData.company });
+                configData.employees.forEach(emp => { if(emp.id) set(ref(db, `employees/${emp.id}/code`), emp.code); });
+            },
+            saveSession: function(sessionData) {
+                set(ref(db, 'current_session'), sessionData);
+            }
+        };
+
+        const configRef = ref(db, 'company_data');
+        onValue(configRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                hotelConfig.masterCode = data.masterCode || "1234";
+                if (data.company) hotelConfig.company = data.company;
+                initApp();
+                renderDynamicCompanyHeader();
+            }
+        });
+
+        const empRef = ref(db, 'employees');
+        onValue(empRef, (snapshot) => {
+            const data = snapshot.val();
+            hotelConfig.employees = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+            initApp();
+        });
+    </script>
+
+    <script>
+        let hotelConfig = {
+            masterCode: "1234",
+            company: { ownerSecretCode: "5678", pdgName: "Gérant Principal", ownerName: "Propriétaire", name: "" },
+            employees: []
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Vérification de session active
+            if(sessionStorage.getItem('HOTEL_SMART_auth')) {
+                window.location.href = 'index.html';
+            }
+        });
+
+        function initApp() {
+            const userSelect = document.getElementById('userSelect');
+            if (!userSelect) return;
+            const current = userSelect.value;
+            userSelect.innerHTML = '<option value="">Sélectionnez votre profil...</option>';
+            
+            userSelect.innerHTML += `<option value="Gérant">${hotelConfig.company.pdgName || 'Gérant'} (Gérant)</option>`;
+            userSelect.innerHTML += `<option value="Propriétaire">${hotelConfig.company.ownerName || 'Propriétaire'} (Propriétaire)</option>`;
+            
+            hotelConfig.employees.forEach(emp => {
+                userSelect.innerHTML += `<option value="emp-${emp.id}">${emp.nom} (${emp.role})</option>`;
+            });
+            userSelect.value = current;
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const role = document.getElementById('userSelect').value;
+            const pin = document.getElementById('passwordInput').value.trim();
+            let auth = null;
+
+            if (role === 'Gérant' && pin === hotelConfig.masterCode) {
+                auth = { user: hotelConfig.company.pdgName, role: "Gérant", code: pin, details: { role: "Gérant" } };
+            } else if (role === 'Propriétaire' && pin === hotelConfig.company.ownerSecretCode) {
+                auth = { user: hotelConfig.company.ownerName, role: "Propriétaire", code: pin, details: { role: "Propriétaire" } };
+            } else if (role.startsWith('emp-')) {
+                const emp = hotelConfig.employees.find(e => `emp-${e.id}` === role);
+                if (emp && String(emp.code) === pin) {
+                    auth = { user: emp.nom, role: "Employé", code: pin, details: { ...emp } };
+                }
+            }
+
+            if (auth) {
+                sessionStorage.setItem('HOTEL_SMART_auth', JSON.stringify(auth));
+                if (window.FirebaseStorage) window.FirebaseStorage.saveSession({ user: auth.user, role: auth.role, timestamp: Date.now() });
+                
+                document.getElementById('success-overlay').style.display = 'flex';
+                setTimeout(() => window.location.href = 'index.html', 1000);
+            } else {
+                alert("Code incorrect");
+                document.getElementById('passwordInput').value = "";
+            }
+        });
+
+        // Administration
+        window.verifyAdminAccess = function() {
+            if (document.getElementById('adminAuthPass').value === hotelConfig.company.ownerSecretCode) {
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('userManagementSection').style.display = 'block';
+                const tbody = document.getElementById('userTableBody');
+                tbody.innerHTML = `<tr><td>Propriétaire</td><td>Root</td><td><input type="text" id="pass-owner" value="${hotelConfig.company.ownerSecretCode}"></td></tr>
+                                   <tr><td>Gérant</td><td>Gérant</td><td><input type="text" id="pass-master" value="${hotelConfig.masterCode}"></td></tr>`;
+                hotelConfig.employees.forEach((emp, i) => {
+                    tbody.innerHTML += `<tr><td>${emp.nom}</td><td>Employé</td><td><input type="text" id="pass-emp-${i}" value="${emp.code}"></td></tr>`;
+                });
+            } else alert("Code incorrect");
+        };
+
+        window.saveUserPasswords = function() {
+            hotelConfig.company.ownerSecretCode = document.getElementById('pass-owner').value;
+            hotelConfig.masterCode = document.getElementById('pass-master').value;
+            hotelConfig.employees.forEach((emp, i) => { emp.code = document.getElementById(`pass-emp-${i}`).value; });
+            window.FirebaseStorage.saveConfig(hotelConfig);
+            location.reload();
+        };
+
+        function renderDynamicCompanyHeader() {
+            if (hotelConfig.company.name) {
+                document.getElementById('company-name-display').innerText = hotelConfig.company.name;
+                document.getElementById('company-dynamic-header').classList.remove('d-none');
+            }
+        }
+    </script>
+</body>
+</html>

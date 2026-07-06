@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Chambres - HotelSmart</title>
+    
+    <meta name="theme-color" content="#075E54">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HotelSmart">
+    <link class="apple-touch-icon" href="logo maison.png">
+    
+    <link class="manifest" href="manifest.json">
+
+    <!-- Configuration pour désactiver l'avertissement de production de Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            development: false,
+            theme: {
+                extend: {
+                    colors: {
+                        whatsapp: {
+                            dark: '#075E54',
+                            teal: '#128C7E',
+                            light: '#25D366',
+                            bg: '#F0F2F5',
+                            card: '#FFFFFF'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex justify-center items-center p-0">
+
+    <div class="w-full h-screen bg-whatsapp-bg sm:shadow-2xl overflow-hidden flex flex-col relative border border-gray-200">
+        
+        <div id="sidebarOverlay" class="absolute inset-0 bg-black/50 z-40 hidden transition-opacity duration-300 opacity-0"></div>
+
+        <aside id="sidebarMenu" class="absolute top-0 bottom-0 left-0 w-64 bg-[#222e35] text-gray-300 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-2xl">
+            <div class="p-4 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal text-white flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-hotel text-xl"></i>
+                    <span class="font-bold text-sm tracking-wide">Menu Gestion</span>
+                </div>
+                <button id="closeMenuBtn" class="text-white text-xl focus:outline-none hover:opacity-80">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-none">
+                <a href="index.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-house w-5"></i>
+                    <span class="text-sm">Accueil</span>
+                </a>
+                <a href="contrats.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-whatsapp-teal text-white font-medium transition-colors">
+                    <i class="fa-solid fa-bed w-5"></i>
+                    <span class="text-sm">Chambres</span>
+                </a>
+                <a href="contrat_locataires.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-users w-5"></i>
+                    <span class="text-sm">Clients</span>
+                </a>
+                <a href="paiements.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-money-bill-wave w-5"></i>
+                    <span class="text-sm">Paiements</span>
+                </a>
+                <a id="menu-comptabilite" href="comptabilite.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-calculator w-5"></i>
+                    <span class="text-sm">Comptabilité</span>
+                </a>
+                <a href="recherche.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-magnifying-glass w-5"></i>
+                    <span class="text-sm">Recherche</span>
+                </a>
+                <div class="border-t border-gray-700/60 my-4"></div>
+                <a id="menu-config" href="config.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-gear w-5"></i>
+                    <span class="text-sm">Configuration PMS</span>
+                </a>
+                <div class="px-4 py-2 mt-2 bg-slate-800/40 rounded-xl border border-gray-700/30 flex flex-col">
+                    <span class="text-[11px] text-gray-400 uppercase font-bold tracking-wider">Session active</span>
+                    <span id="sidebar-auth-user" class="text-xs font-bold text-white truncate">Invité</span>
+                    <span id="sidebar-auth-role" class="text-[10px] text-whatsapp-light truncate">Utilisateur</span>
+                </div>
+                <a href="#" onclick="logout()" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-red-900/30 text-amber-500 transition-colors">
+                    <i class="fa-solid fa-sign-out-alt w-5"></i>
+                    <span class="text-sm">Quitter</span>
+                </a>
+            </nav>
+            <div class="p-4 border-t border-gray-700/60 text-xs text-gray-500 text-center">
+                v1.2.0 - PWA Connect
+            </div>
+        </aside>
+
+        <header class="sticky top-0 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal px-4 pt-4 pb-3 flex justify-between items-center shadow-md z-30 shrink-0">
+            <button id="openMenuBtn" class="text-white text-xl focus:outline-none"><i class="fa-solid fa-bars"></i></button>
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <span id="header-name-display">HotelSmart</span>
+                <span id="network-status-toast" class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">Initialisation...</span>
+            </h1>
+            <div class="flex items-center">
+                <img src="logo maison.png" alt="Logo" id="header-logo-display" class="w-10 h-10 object-contain rounded-full border border-white/20 bg-white/10 p-0.5" onerror="this.style.display='none';">
+            </div>
+        </header>
+
+        <button id="pwa-install-btn" class="fixed bottom-20 left-4 z-40 bg-[#128C7E] hover:bg-[#075E54] text-white font-bold text-xs py-2.5 px-4 rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 hidden items-center gap-2">
+            <i class="fa-solid fa-download"></i> Installer l'application
+        </button>
+
+        <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-12">
+            
+            <div>
+                <h2 class="text-xl font-bold text-gray-900 flex items-center gap-1">
+                    Tableau de Bord des Chambres 🛏️
+                </h2>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Statut en temps réel et affectation des clients</p>
+            </div>
+
+            <div class="grid grid-cols-4 gap-1.5 text-center text-[11px] sm:text-xs">
+                <div class="bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm">
+                    <span class="block text-gray-400 font-medium">Libres</span>
+                    <span id="count-dispo" class="text-base sm:text-lg font-bold text-emerald-600">0</span>
+                </div>
+                <div class="bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm">
+                    <span class="block text-gray-400 font-medium">Occupées</span>
+                    <span id="count-occupe" class="text-base sm:text-lg font-bold text-red-500">0</span>
+                </div>
+                <div class="bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm">
+                    <span class="block text-gray-400 font-medium">Réservées</span>
+                    <span id="count-reserve" class="text-base sm:text-lg font-bold text-blue-500">0</span>
+                </div>
+                <div class="bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm">
+                    <span class="block text-gray-400 font-medium">Nettoyage</span>
+                    <span id="count-entretien" class="text-base sm:text-lg font-bold text-amber-500">0</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <input type="text" id="search-input" oninput="searchRooms()" placeholder="Rechercher par N° ou description..." class="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-whatsapp-teal shadow-sm">
+                <button class="bg-whatsapp-teal text-white font-bold px-4 py-2 rounded-xl text-xs shadow hover:bg-whatsapp-dark transition">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3" id="rooms-grid-container">
+            </div>
+
+        </main>
+
+        <div id="roomModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-300">
+            <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col transform scale-95 transition-transform duration-300" id="modalContent">
+                <div class="bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal p-4 text-white flex justify-between items-center">
+                    <div>
+                        <h3 id="modal-room-number" class="text-lg font-black tracking-wide">Chambre ---</h3>
+                        <p id="modal-room-type" class="text-[11px] opacity-75 uppercase font-bold tracking-wider">Type Inconnu</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="modal-unlock-btn" onclick="unlockModalFields()" class="bg-red-500 hover:bg-red-600 text-white font-bold text-[11px] px-2.5 py-1 rounded-lg flex items-center gap-1 transition shadow">
+                            <i class="fa-solid fa-unlock text-[10px]"></i> Déverrouiller
+                        </button>
+                        <button onclick="closeRoomModal()" class="text-white hover:opacity-70 text-xl focus:outline-none">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-5 space-y-4 text-xs text-gray-600 max-h-[70vh] overflow-y-auto scrollbar-none">
+                    <div class="bg-gray-50 p-3 rounded-xl space-y-2 border border-gray-100 flex justify-between items-center">
+                        <div class="space-y-1">
+                            <p class="font-bold text-whatsapp-teal text-sm flex items-center gap-1.5">
+                                <i class="fa-solid fa-money-bill-wave"></i> <span id="modal-room-price">0</span> CFA / Nuit
+                            </p>
+                            <p class="text-gray-500 italic flex items-start gap-1.5">
+                                <i class="fa-solid fa-circle-info mt-0.5"></i> <span id="modal-room-desc">Aucune description</span>
+                            </p>
+                        </div>
+                        <button onclick="redirectToPayment()" class="bg-amber-50 text-white font-bold px-3 py-2 rounded-xl hover:bg-amber-600 shadow transition flex items-center gap-1">
+                            <i class="fa-solid fa-credit-card"></i> Paiement
+                        </button>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-gray-700">Statut de la Chambre</label>
+                        <select id="modal-status-select" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                            <option value="Disponible">Disponible (Prête)</option>
+                            <option value="Occupée">Occupée (Client en séjour)</option>
+                            <option value="Réservée">Réservée (Option de réservation)</option>
+                            <option value="Entretien">Entretien (Ménage / Réparation)</option>
+                        </select>
+                        <div id="read-status-display" class="hidden mt-1 text-sm font-black"></div>
+                    </div>
+
+                    <div id="modal-client-area" class="space-y-4 bg-slate-50 p-3 rounded-xl border border-gray-200/60 hidden">
+                        <p class="font-bold text-gray-800 border-b pb-1 flex items-center gap-1">
+                            <i class="fa-solid fa-address-card text-whatsapp-teal"></i> Détails de l'affectation
+                        </p>
+                        
+                        <div class="space-y-1.5">
+                            <label class="block font-bold text-gray-700">Nom du Client / Réservant</label>
+                            <input type="text" id="modal-client-name" placeholder="Ex: M. Amoussou" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                            <div id="read-client-display" class="hidden mt-1 text-sm font-black text-gray-900 bg-white p-2 rounded-lg border border-gray-100 shadow-sm"></div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="space-y-1.5">
+                                <label class="block font-bold text-gray-700">Date d'arrivée</label>
+                                <input type="date" id="modal-arrival-date" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                                <div id="read-date-display" class="hidden mt-1 text-sm font-black text-slate-800"></div>
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="block font-bold text-gray-700">Heure d'arrivée</label>
+                                <input type="time" id="modal-arrival-time" class="w-full bg-white border border-gray-200 rounded-xl px-2 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                                <div id="read-time-display" class="hidden mt-1 text-sm font-black text-slate-800"></div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block font-bold text-gray-700 border-b border-gray-200/60 pb-0.5">Restauration & Menus homologués</label>
+                            <div id="read-meals-summary" class="hidden bg-emerald-50 text-emerald-800 p-2.5 rounded-xl border border-emerald-100 flex flex-col gap-1"></div>
+                            <div class="space-y-2" id="meals-interactive-zone">
+                                <div class="bg-white p-2 rounded-xl border border-gray-200 flex flex-col gap-1.5">
+                                    <label class="flex items-center space-x-1.5 font-semibold text-gray-700 cursor-pointer">
+                                        <input type="checkbox" id="restau-pdej" onchange="toggleMealInputs('pdej')" class="rounded text-whatsapp-teal focus:ring-whatsapp-teal">
+                                        <span>Petit-Déjeuner</span>
+                                    </label>
+                                    <div id="box-pdej" class="grid grid-cols-2 gap-1.5 hidden">
+                                        <select id="menu-pdej" onchange="handleMealSelectChange('pdej')" class="border border-gray-200 rounded-lg px-2 py-1 text-[11px] focus:outline-none bg-gray-50"></select>
+                                        <input type="number" id="price-pdej" placeholder="Prix négocié CFA" class="border border-gray-200 rounded-lg px-2 py-1 text-[11px] focus:outline-none">
+                                    </div>
+                                </div>
+                                <div class="bg-white p-2 rounded-xl border border-gray-200 flex flex-col gap-1.5">
+                                    <label class="flex items-center space-x-1.5 font-semibold text-gray-700 cursor-pointer">
+                                        <input type="checkbox" id="restau-dej" onchange="toggleMealInputs('dej')" class="rounded text-whatsapp-teal focus:ring-whatsapp-teal">
+                                        <span>Déjeuner</span>
+                                    </label>
+                                    <div id="box-dej" class="grid grid-cols-2 gap-1.5 hidden">
+                                        <select id="menu-dej" onchange="handleMealSelectChange('dej')" class="border border-gray-200 rounded-lg px-2 py-1 text-[11px] focus:outline-none bg-gray-50"></select>
+                                        <input type="number" id="price-dej" placeholder="Prix négocié CFA" class="border border-gray-200 rounded-lg px-2 py-1 text-[11px] focus:outline-none">
+                                    </div>
+                                </div>
+                                <div class="bg-white p-2 rounded-xl border border-gray-200 flex flex-col gap-1.5">
+                                    <label class="flex items-center space-x-1.5 font-semibold text-gray-700 cursor-pointer">
+                                        <input type="checkbox" id="restau-din" onchange="toggleMealInputs('din')" class="rounded text-whatsapp-teal focus:ring-whatsapp-teal">
+                                        <span>Dîner</span>
+                                    </label>
+                                    <div id="box-din" class="grid grid-cols-2 gap-1.5 hidden">
+                                        <select id="menu-din" onchange="handleMealSelectChange('din')" class="border border-gray-200 rounded-lg px-2 py-1 text-[11px] focus:outline-none bg-gray-50"></select>
+                                        <input type="number" id="price-din" placeholder="Prix négocié CFA" class="border border-gray-200 rounded-lg px-2 py-1 text-[11px] focus:outline-none">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center border-b border-gray-200/60 pb-0.5">
+                                <label class="block font-bold text-gray-700">Boissons consommées / Commandes</label>
+                                <button type="button" id="btn-add-drink" onclick="addNewDrinkRow()" class="text-whatsapp-teal hover:text-whatsapp-dark text-[11px] font-bold flex items-center gap-0.5">
+                                    <i class="fa-solid fa-circle-plus"></i> Ajouter
+                                </button>
+                            </div>
+                            <div id="read-drinks-summary" class="hidden bg-amber-50 text-amber-900 p-2.5 rounded-xl border border-amber-100 flex flex-col gap-1"></div>
+                            <div id="drinks-dynamic-container" class="space-y-1.5">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2 shrink-0">
+                    <button onclick="closeRoomModal()" class="px-4 py-2 bg-gray-200 text-gray-600 rounded-xl font-semibold hover:bg-gray-300 transition">Fermer</button>
+                    <button id="modal-submit-btn" onclick="saveModalChanges()" class="px-5 py-2 bg-whatsapp-teal text-white rounded-xl font-semibold hover:bg-whatsapp-dark shadow transition flex items-center gap-1">
+                        <i class="fa-solid fa-lock text-[10px]"></i> Valider
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <footer class="bg-white text-gray-500 text-center py-4 border-t border-gray-200 text-xs mt-auto space-y-1 shrink-0">
+            <p class="font-bold text-gray-800">HotelSmart <span class="text-whatsapp-teal">Agencies</span></p>
+            <p class="text-[10px] opacity-60">&copy; 2026 - Tous droits réservés.</p>
+        </footer>
+
+    </div>
+
+    <!-- Configuration SDK Firebase en Modules -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmlcMYeoeo4ESVWgzTC2zdq4lheqwbOyc",
+            authDomain: "imany-hotel.firebaseapp.com",
+            databaseURL: "https://imany-hotel-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "imany-hotel",
+            storageBucket: "imany-hotel.firebasestorage.app",
+            messagingSenderId: "941252716027",
+            appId: "1:941252716027:web:63b91f87c4f3fc7f07975e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.FirebaseBridge = {
+            db: db,
+            roomsRef: ref(db, 'rooms'),
+            
+            syncAllRooms: function(roomsData) {
+                return set(ref(this.db, 'rooms'), roomsData);
+            },
+            updateRoom: function(roomId, roomData) {
+                return update(ref(this.db, `rooms/${roomId}`), roomData);
+            }
+        };
+
+        const connectedRef = ref(db, ".info/connected");
+        onValue(connectedRef, (snap) => {
+            // Sécurisation de l'appel asynchrone avant l'initialisation du second script
+            if (typeof window.updateNetworkToast === "function") {
+                if (snap.val() === true) {
+                    window.updateNetworkToast("online");
+                } else {
+                    window.updateNetworkToast("offline");
+                }
+            }
+        });
+
+        onValue(ref(db, 'company_data'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                if (data.masterCode) {
+                    window.masterCode = data.masterCode;
+                    window.SECURITY_PIN = data.masterCode;
+                }
+                if (data.company) {
+                    window.hotelCompanyData = data.company;
+                    if (data.company.name) {
+                        const headerDisplay = document.getElementById('header-name-display');
+                        if (headerDisplay) headerDisplay.innerText = data.company.name;
+                    }
+                }
+            }
+        });
+
+        onValue(ref(db, 'drinks'), (snapshot) => {
+            const data = snapshot.val();
+            window.configuredDrinks = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+            if (typeof window.loadConfiguredCatalogues === "function") {
+                window.loadConfiguredCatalogues();
+            }
+        });
+
+        onValue(ref(db, 'menus'), (snapshot) => {
+            const data = snapshot.val();
+            window.configuredMenus = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+            if (typeof window.loadConfiguredCatalogues === "function") {
+                window.loadConfiguredCatalogues();
+            }
+        });
+
+        onValue(window.FirebaseBridge.roomsRef, (snapshot) => {
+            if (typeof window.updateNetworkToast === "function") {
+                window.updateNetworkToast("syncing");
+            }
+            const data = snapshot.val();
+            
+            let fetchedRooms = [];
+            if (data) {
+                fetchedRooms = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                }));
+            }
+            
+            window.rooms = fetchedRooms.map(room => ({
+                status: room.status || 'Disponible',
+                client: room.client || '',
+                arrivalDate: room.arrivalDate || '',
+                arrivalTime: room.arrivalTime || '',
+                meals: room.meals || { pdej: false, dej: false, din: false },
+                mealsDetails: room.mealsDetails || { pdej: { menu: '', price: '' }, dej: { menu: '', price: '' }, din: { menu: '', price: '' } },
+                drinks: room.drinks || [],
+                ...room
+            }));
+            
+            if (typeof window.updateStatsCounters === "function" && typeof window.searchRooms === "function") {
+                window.updateStatsCounters();
+                window.searchRooms();
+            }
+            if (typeof window.updateNetworkToast === "function") {
+                window.updateNetworkToast("online");
+            }
+        }, (error) => {
+            console.error("Erreur de synchronisation Firebase :", error);
+            if (typeof window.updateNetworkToast === "function") {
+                window.updateNetworkToast("offline");
+            }
+        });
+    </script>
+
+    <script>
+        const openMenuBtn = document.getElementById('openMenuBtn');
+        const closeMenuBtn = document.getElementById('closeMenuBtn');
+        const sidebarMenu = document.getElementById('sidebarMenu');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        // Correction pour s'assurer que l'animation d'ouverture s'exécute correctement
+        function openMenu() {
+            sidebarOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                sidebarOverlay.classList.remove('opacity-0');
+                sidebarOverlay.classList.add('opacity-100');
+                sidebarMenu.classList.remove('-translate-x-full');
+            }, 10);
+        }
+
+        function closeMenu() {
+            sidebarMenu.classList.add('-translate-x-full');
+            sidebarOverlay.classList.remove('opacity-100');
+            sidebarOverlay.classList.add('opacity-0');
+            setTimeout(() => {
+                sidebarOverlay.classList.add('hidden');
+            }, 300);
+        }
+
+        openMenuBtn.addEventListener('click', openMenu);
+        closeMenuBtn.addEventListener('click', closeMenu);
+        sidebarOverlay.addEventListener('click', closeMenu);
+
+        window.rooms = [];
+        window.configuredDrinks = [];
+        window.configuredMenus = [];
+        window.hotelCompanyData = null;
+        let currentSelectedRoomId = null;
+        let isModalUnlocked = false;
+        window.SECURITY_PIN = "1234"; 
+        window.userSecurityCode = ""; // Stockage dynamique du code secret de l'utilisateur connecté
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConnectedUserSession();
+            loadConfiguredCatalogues();
+            searchRooms(); 
+        });
+
+        function loadConnectedUserSession() {
+            // Utilisation unifiée de sessionStorage pour la persistance de l'authentification
+            const authData = JSON.parse(sessionStorage.getItem('HOTEL_SMART_auth'));
+            if (authData && authData.user) {
+                document.getElementById('sidebar-auth-user').innerText = authData.user;
+                document.getElementById('sidebar-auth-role').innerText = authData.role || "Utilisateur";
+                window.userSecurityCode = authData.code || ""; // Récupération sécurisée du code d'accès de la session
+
+                // Filtrage dynamique des privilèges de navigation selon le rôle utilisateur
+                const userRole = authData.role;
+                if (userRole === "Gérant" || userRole === "Employé") {
+                    const configLink = document.getElementById('menu-config');
+                    const comptaLink = document.getElementById('menu-comptabilite');
+                    if (configLink) configLink.remove();
+                    if (comptaLink) comptaLink.remove();
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        }
+
+        function loadConfiguredCatalogues() {
+            window.configuredDrinks = window.configuredDrinks || [];
+            window.configuredMenus = window.configuredMenus || [];
+        }
+
+        function updateStatsCounters() {
+            const dispo = window.rooms.filter(r => r.status === 'Disponible').length;
+            const occupe = window.rooms.filter(r => r.status === 'Occupée').length;
+            const reserve = window.rooms.filter(r => r.status === 'Réservée').length;
+            const textretien = window.rooms.filter(r => r.status === 'Entretien').length;
+
+            document.getElementById('count-dispo').innerText = String(dispo).padStart(2, '0');
+            document.getElementById('count-occupe').innerText = String(occupe).padStart(2, '0');
+            document.getElementById('count-reserve').innerText = String(reserve).padStart(2, '0');
+            document.getElementById('count-entretien').innerText = String(textretien).padStart(2, '0');
+        }
+        window.updateStatsCounters = updateStatsCounters;
+
+        function searchRooms() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            const container = document.getElementById('rooms-grid-container');
+            
+            const filteredRooms = window.rooms.filter(r => {
+                const numberMatch = String(r.number).toLowerCase().includes(query);
+                const descMatch = String(r.desc).toLowerCase().includes(query);
+                const typeMatch = String(r.type).toLowerCase().includes(query);
+                return numberMatch || descMatch || typeMatch;
+            });
+
+            if(filteredRooms.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-gray-400 italic text-xs">
+                        <i class="fa-solid fa-circle-question text-xl block mb-2 text-gray-300"></i>
+                        Aucune chambre ne correspond à votre recherche.
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = filteredRooms.map(r => {
+                let borderClass = 'border-l-4 border-emerald-500';
+                let badgeClass = 'bg-emerald-50 text-emerald-600';
+                let statusText = 'Disponible';
+                let infoContent = `<p class="text-gray-400 italic"><i class="fa-solid fa-circle-info mr-1"></i> Prête à recevoir un client</p>`;
+
+                if (r.status === 'Occupée') {
+                    borderClass = 'border-l-4 border-red-500';
+                    badgeClass = 'bg-red-50 text-red-600';
+                    statusText = 'Occupée';
+                    
+                    let dateStr = r.arrivalDate ? ` le ${r.arrivalDate.split('-').reverse().join('/')}` : '';
+                    let timeStr = r.arrivalTime ? ` à ${r.arrivalTime}` : '';
+                    infoContent = `<p class="text-gray-500 font-medium"><i class="fa-solid fa-user mr-1 text-red-400"></i> Client : ${r.client || 'Non renseigné'}</p>
+                                   <p class="text-[10px] text-gray-400 pl-4">Arrivée${dateStr}${timeStr}</p>`;
+                } else if (r.status === 'Réservée') {
+                    borderClass = 'border-l-4 border-blue-500';
+                    badgeClass = 'bg-blue-50 text-blue-600';
+                    statusText = 'Réservée';
+                    
+                    let dateStr = r.arrivalDate ? ` le ${r.arrivalDate.split('-').reverse().join('/')}` : '';
+                    infoContent = `<p class="text-gray-500 font-medium"><i class="fa-solid fa-calendar-check mr-1 text-blue-400"></i> Réservé par : ${r.client || 'Non renseigné'}</p>
+                                   <p class="text-[10px] text-gray-400 pl-4">Prévu${dateStr}</p>`;
+                } else if (r.status === 'Entretien') {
+                    borderClass = 'border-l-4 border-amber-500';
+                    badgeClass = 'bg-amber-50 text-amber-600';
+                    statusText = 'Entretien';
+                    infoContent = `<p class="text-amber-600"><i class="fa-solid fa-broom mr-1"></i> Ménage en cours...</p>`;
+                }
+
+                return `
+                    <div onclick="openRoomModal('${r.id}')" class="bg-white rounded-2xl p-4 shadow-sm ${borderClass} space-y-3 cursor-pointer hover:shadow-md transition transform active:scale-[0.99]">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-lg font-black text-gray-800">Chambre ${r.number}</span>
+                                <span class="block text-[10px] text-gray-400 uppercase font-bold tracking-wider">${r.type}</span>
+                            </div>
+                            <span class="${badgeClass} text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">${statusText}</span>
+                        </div>
+                        <div class="text-xs text-gray-600 space-y-1">
+                            <p class="font-semibold text-whatsapp-teal"><i class="fa-solid fa-money-bill-wave mr-1"></i> ${(parseFloat(r.price) || 0).toLocaleString()} CFA / Nuit</p>
+                            ${infoContent}
+                        </div>
+                        <div class="pt-2 border-t border-gray-100 flex justify-end text-[11px] text-whatsapp-teal font-bold tracking-wide">
+                            Gérer l'affectation <i class="fa-solid fa-chevron-right ml-1 mt-0.5"></i>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        window.searchRooms = searchRooms;
+
+        function openRoomModal(id) {
+            currentSelectedRoomId = id;
+            const room = window.rooms.find(r => r.id === id);
+            if(!room) return;
+
+            document.getElementById('modal-room-number').innerText = `Chambre ${room.number}`;
+            document.getElementById('modal-room-type').innerText = room.type;
+            document.getElementById('modal-room-price').innerText = (parseFloat(room.price) || 0).toLocaleString();
+            document.getElementById('modal-room-desc').innerText = room.desc || "Aucune description renseignée.";
+            
+            const statusSelect = document.getElementById('modal-status-select');
+            statusSelect.value = room.status || 'Disponible';
+            
+            document.getElementById('modal-client-name').value = room.client || '';
+            document.getElementById('modal-arrival-date').value = room.arrivalDate || '';
+            document.getElementById('modal-arrival-time').value = room.arrivalTime || '';
+
+            ['pdej', 'dej', 'din'].forEach(key => {
+                const selectElement = document.getElementById(`menu-${key}`);
+                selectElement.innerHTML = '<option value="">-- Sélectionner un menu --</option>';
+                window.configuredMenus.forEach(m => {
+                    selectElement.innerHTML += `<option value="${m.name}" data-price="${m.sellPrice}">${m.name} (${m.sellPrice} CFA)</option>`;
+                });
+            });
+
+            const meals = room.meals || { pdej: false, dej: false, din: false };
+            const mDetails = room.mealsDetails || { pdej: { menu: '', price: '' }, dej: { menu: '', price: '' }, din: { menu: '', price: '' } };
+
+            ['pdej', 'dej', 'din'].forEach(key => {
+                const chk = document.getElementById(`restau-${key}`);
+                chk.checked = !!meals[key];
+                document.getElementById(`menu-${key}`).value = mDetails[key]?.menu || '';
+                document.getElementById(`price-${key}`).value = mDetails[key]?.price || '';
+                toggleMealInputs(key);
+            });
+
+            const drinksContainer = document.getElementById('drinks-dynamic-container');
+            drinksContainer.innerHTML = '';
+            const existingDrinks = room.drinks || [];
+            if(existingDrinks.length > 0) {
+                existingDrinks.forEach(d => addNewDrinkRow(d.name, d.price));
+            }
+
+            statusSelect.onchange = function() {
+                if(this.value === 'Occupée' || this.value === 'Réservée') {
+                    document.getElementById('modal-client-area').classList.remove('hidden');
+                } else {
+                    document.getElementById('modal-client-area').classList.add('hidden');
+                }
+            };
+            statusSelect.onchange();
+
+            isModalUnlocked = false; // Initialisé verrouillé à l'ouverture pour exiger l'authentification
+            applyModalLockState();
+
+            const modal = document.getElementById('roomModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('modalContent').classList.remove('scale-95');
+                document.getElementById('modalContent').classList.add('scale-100');
+            }, 10);
+        }
+        window.openRoomModal = openRoomModal;
+
+        function applyModalLockState() {
+            const inputs = document.querySelectorAll('#roomModal input, #roomModal select');
+            inputs.forEach(input => {
+                input.disabled = !isModalUnlocked;
+            });
+            
+            const deleteButtons = document.querySelectorAll('.drink-del-btn');
+            deleteButtons.forEach(btn => btn.disabled = !isModalUnlocked);
+
+            document.getElementById('btn-add-drink').style.pointerEvents = isModalUnlocked ? 'auto' : 'none';
+            document.getElementById('btn-add-drink').style.opacity = isModalUnlocked ? '1' : '0.5';
+            document.getElementById('modal-submit-btn').disabled = !isModalUnlocked;
+
+            const readStatus = document.getElementById('read-status-display');
+            const readClient = document.getElementById('read-client-display');
+            const readDate = document.getElementById('read-date-display');
+            const readTime = document.getElementById('read-time-display');
+            const readMeals = document.getElementById('read-meals-summary');
+            const readDrinks = document.getElementById('read-drinks-summary');
+            
+            const interactiveMeals = document.getElementById('meals-interactive-zone');
+            const interactiveDrinks = document.getElementById('drinks-dynamic-container');
+
+            if (isModalUnlocked) {
+                document.getElementById('modal-unlock-btn').classList.add('hidden');
+                document.getElementById('modal-submit-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+                
+                readStatus.classList.add('hidden');
+                readClient.classList.add('hidden');
+                readDate.classList.add('hidden');
+                readTime.classList.add('hidden');
+                readMeals.classList.add('hidden');
+                readDrinks.classList.add('hidden');
+                
+                document.getElementById('modal-status-select').classList.remove('hidden');
+                document.getElementById('modal-client-name').classList.remove('hidden');
+                document.getElementById('modal-arrival-date').classList.remove('hidden');
+                document.getElementById('modal-arrival-time').classList.remove('hidden');
+                interactiveMeals.classList.remove('hidden');
+                interactiveDrinks.classList.remove('hidden');
+            } else {
+                document.getElementById('modal-unlock-btn').classList.remove('hidden');
+                document.getElementById('modal-submit-btn').classList.add('opacity-50', 'cursor-not-allowed');
+
+                const statusVal = document.getElementById('modal-status-select').value;
+                document.getElementById('modal-status-select').classList.add('hidden');
+                readStatus.classList.remove('hidden');
+                readStatus.innerText = statusVal.toUpperCase();
+                if(statusVal === 'Disponible') readStatus.className = "text-base font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 inline-block mt-1";
+                if(statusVal === 'Occupée') readStatus.className = "text-base font-black text-red-600 bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 inline-block mt-1";
+                if(statusVal === 'Réservée') readStatus.className = "text-base font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 inline-block mt-1";
+                if(statusVal === 'Entretien') readStatus.className = "text-base font-black text-amber-600 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 inline-block mt-1";
+
+                const clientVal = document.getElementById('modal-client-name').value.trim();
+                document.getElementById('modal-client-name').classList.add('hidden');
+                readClient.classList.remove('hidden');
+                readClient.innerText = clientVal ? clientVal : "Aucun client assigné";
+                readClient.className = "text-base font-black text-slate-950 bg-white p-2.5 rounded-xl border border-gray-200 shadow-sm block mt-1";
+
+                const dateVal = document.getElementById('modal-arrival-date').value;
+                document.getElementById('modal-arrival-date').classList.add('hidden');
+                readDate.classList.remove('hidden');
+                readDate.innerText = dateVal ? dateVal.split('-').reverse().join('/') : "--/--/----";
+                readDate.className = "text-base font-black text-whatsapp-teal bg-white p-2 rounded-xl border border-gray-200 tracking-wide text-center block mt-1";
+
+                const timeVal = document.getElementById('modal-arrival-time').value;
+                document.getElementById('modal-arrival-time').classList.add('hidden');
+                readTime.classList.remove('hidden');
+                readTime.innerText = timeVal ? timeVal : "--:--";
+                readTime.className = "text-base font-black text-whatsapp-teal bg-white p-2 rounded-xl border border-gray-200 tracking-wide text-center block mt-1";
+
+                interactiveMeals.classList.add('hidden');
+                readMeals.classList.remove('hidden');
+                let mealsSummaryHtml = "";
+                const mealTypes = { pdej: "Petit-Déjeuner", dej: "Déjeuner", din: "Dîner" };
+                let hasMeals = false;
+
+                Object.keys(mealTypes).forEach(key => {
+                    if(document.getElementById(`restau-${key}`).checked) {
+                        hasMeals = true;
+                        const menuName = document.getElementById(`menu-${key}`).value || "Non spécifié";
+                        const menuPrice = document.getElementById(`price-${key}`).value || "0";
+                        mealsSummaryHtml += `<div class="flex justify-between items-center py-1 border-b border-emerald-100 last:border-none">
+                            <span class="font-bold text-emerald-900 text-xs">☕ ${mealTypes[key]}</span>
+                            <span class="font-black text-emerald-700 text-[13px]">${menuName} — <span class="text-emerald-900">${parseInt(menuPrice).toLocaleString()} CFA</span></span>
+                        </div>`;
+                    }
+                });
+                readMeals.innerHTML = hasMeals ? mealsSummaryHtml : `<p class="italic text-gray-400 text-center py-1">Aucune formule de restauration sélectionnée.</p>`;
+                if(!hasMeals) readMeals.className = "bg-gray-50 text-gray-500 p-2 rounded-xl border border-gray-100 flex flex-col gap-1";
+                else readMeals.className = "bg-emerald-50 text-emerald-800 p-2.5 rounded-xl border border-emerald-100 flex flex-col gap-1";
+
+                interactiveDrinks.classList.add('hidden');
+                readDrinks.classList.remove('hidden');
+                let drinksSummaryHtml = "";
+                const drinkRows = interactiveDrinks.children;
+                let hasDrinks = false;
+
+                for(let row of drinkRows) {
+                    const selectEl = row.querySelector('.drink-select');
+                    const priceEl = row.querySelector('.drink-price-input');
+                    if(selectEl && selectEl.value) {
+                        hasDrinks = true;
+                        const dName = selectEl.value;
+                        const dPrice = priceEl.value || "0";
+                        drinksSummaryHtml += `<div class="flex justify-between items-center py-1 border-b border-amber-200 last:border-none">
+                            <span class="font-bold text-amber-950 text-xs">🍾 ${dName}</span>
+                            <span class="font-black text-amber-700 text-[13px]">${parseInt(dPrice).toLocaleString()} CFA</span>
+                        </div>`;
+                    }
+                }
+                readDrinks.innerHTML = hasDrinks ? drinksSummaryHtml : `<p class="italic text-gray-400 text-center py-1">Aucune boisson enregistrée.</p>`;
+                if(!hasDrinks) readDrinks.className = "bg-gray-50 text-gray-500 p-2 rounded-xl border border-gray-100 flex flex-col gap-1";
+                else readDrinks.className = "bg-amber-50 text-amber-950 p-2.5 rounded-xl border border-amber-100 flex flex-col gap-1";
+            }
+        }
+
+        function unlockModalFields() {
+            const inputCode = prompt("🔒 Sécurité : Saisissez le code secret pour modifier cette fiche :");
+            if(inputCode === null) return;
+            
+            // Comparaison intelligente avec window.userSecurityCode lié à la session connectée
+            if(String(inputCode) === String(window.userSecurityCode) && window.userSecurityCode !== "") {
+                isModalUnlocked = true;
+                applyModalLockState();
+            } else {
+                alert("❌ Code erroné ! Modification refusée.");
+            }
+        }
+
+        function handleMealSelectChange(type) {
+            const select = document.getElementById(`menu-${type}`);
+            const priceInput = document.getElementById(`price-${type}`);
+            const selectedOption = select.options[select.selectedIndex];
+            if (selectedOption && selectedOption.value !== "") {
+                priceInput.value = selectedOption.getAttribute('data-price');
+            } else {
+                priceInput.value = '';
+            }
+        }
+
+        function handleDrinkSelectChange(rowId) {
+            const select = document.querySelector(`#${rowId} .drink-select`);
+            const priceInput = document.querySelector(`#${rowId} .drink-price-input`);
+            const selectedOption = select.options[select.selectedIndex];
+            if (selectedOption && selectedOption.value !== "") {
+                priceInput.value = selectedOption.getAttribute('data-price');
+            } else {
+                priceInput.value = '';
+            }
+        }
+
+        // Ajustement pour s'assurer du basculement correct des formulaires repas
+        function toggleMealInputs(type) {
+            const checkbox = document.getElementById(`restau-${type}`);
+            const box = document.getElementById(`box-${type}`);
+            if(checkbox.checked) {
+                box.classList.remove('hidden');
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        function addNewDrinkRow(name = '', price = '') {
+            const container = document.getElementById('drinks-dynamic-container');
+            const rowId = 'drink_' + Date.now() + Math.random().toString(36).substr(2, 4);
+            
+            const div = document.createElement('div');
+            div.id = rowId;
+            div.className = "flex gap-1.5 items-center bg-white p-1.5 rounded-lg border border-gray-200";
+            
+            let optionsHtml = '<option value="">-- Boisson --</option>';
+            window.configuredDrinks.forEach(d => {
+                const selected = d.name === name ? 'selected' : '';
+                optionsHtml += `<option value="${d.name}" data-price="${d.sellPrice}" ${selected}>${d.name}</option>`;
+            });
+
+            div.innerHTML = `
+                <select onchange="handleDrinkSelectChange('${rowId}')" class="drink-select flex-1 border border-gray-200 rounded px-2 py-1 text-[11px] focus:outline-none bg-gray-50">
+                    ${optionsHtml}
+                </select>
+                <input type="number" placeholder="Prix négocié CFA" value="${price}" class="drink-price-input w-28 border border-gray-200 rounded px-2 py-1 text-[11px] focus:outline-none">
+                <button type="button" onclick="document.getElementById('${rowId}').remove()" class="drink-del-btn text-red-500 hover:text-red-700 px-1 text-sm">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            `;
+            container.appendChild(div);
+            
+            const elements = div.querySelectorAll('select, input, button');
+            elements.forEach(el => el.disabled = !isModalUnlocked);
+        }
+
+        function closeRoomModal() {
+            document.getElementById('modalContent').classList.remove('scale-100');
+            document.getElementById('modalContent').classList.add('scale-95');
+            setTimeout(() => {
+                document.getElementById('roomModal').classList.add('hidden');
+                currentSelectedRoomId = null;
+                isModalUnlocked = false;
+            }, 150);
+        }
+
+        function saveModalChanges() {
+            if(!currentSelectedRoomId || !isModalUnlocked) return;
+
+            const roomIndex = window.rooms.findIndex(r => r.id === currentSelectedRoomId);
+            if(roomIndex === -1) return;
+
+            const nextStatus = document.getElementById('modal-status-select').value;
+            const nextClient = document.getElementById('modal-client-name').value.trim();
+            const nextDate = document.getElementById('modal-arrival-date').value;
+            const nextTime = document.getElementById('modal-arrival-time').value;
+
+            if((nextStatus === 'Occupée' || nextStatus === 'Réservée') && !nextClient) {
+                alert("Veuillez saisir le nom du client pour valider ce statut.");
+                return;
+            }
+
+            let updatedFields = {
+                status: nextStatus
+            };
+            
+            if (nextStatus === 'Occupée' || nextStatus === 'Réservée') {
+                updatedFields.client = nextClient;
+                updatedFields.arrivalDate = nextDate;
+                updatedFields.arrivalTime = nextTime;
+                
+                updatedFields.meals = {
+                    pdej: document.getElementById('restau-pdej').checked,
+                    dej: document.getElementById('restau-dej').checked,
+                    din: document.getElementById('restau-din').checked
+                };
+                updatedFields.mealsDetails = {
+                    pdej: { menu: document.getElementById('menu-pdej').value, price: document.getElementById('price-pdej').value },
+                    dej: { menu: document.getElementById('menu-dej').value, price: document.getElementById('price-dej').value },
+                    din: { menu: document.getElementById('menu-din').value, price: document.getElementById('price-din').value }
+                };
+
+                const drinkRows = document.getElementById('drinks-dynamic-container').children;
+                const activeDrinks = [];
+                for(let row of drinkRows) {
+                    const dSelect = row.querySelector('.drink-select');
+                    if (dSelect) {
+                        const dName = dSelect.value.trim();
+                        const dPrice = row.querySelector('.drink-price-input').value.trim();
+                        if(dName) {
+                            activeDrinks.push({ name: dName, price: dPrice });
+                        }
+                    }
+                }
+                updatedFields.drinks = activeDrinks;
+
+            } else {
+                updatedFields.client = '';
+                updatedFields.arrivalDate = '';
+                updatedFields.arrivalTime = '';
+                updatedFields.meals = { pdej: false, dej: false, din: false };
+                updatedFields.mealsDetails = { pdej: { menu: '', price: '' }, dej: { menu: '', price: '' }, din: { menu: '', price: '' } };
+                updatedFields.drinks = [];
+            }
+
+            if (window.FirebaseBridge) {
+                window.FirebaseBridge.updateRoom(currentSelectedRoomId, updatedFields)
+                    .then(() => {
+                        console.log(`Chambre ${currentSelectedRoomId} mise à jour sur Firebase.`);
+                    })
+                    .catch(err => console.error("Erreur d'écriture Firebase :", err));
+            }
+
+            Object.assign(window.rooms[roomIndex], updatedFields);
+
+            updateStatsCounters();
+            searchRooms();
+            closeRoomModal();
+        }
+
+        function redirectToPayment() {
+            if(!currentSelectedRoomId) return;
+            const room = window.rooms.find(r => r.id === currentSelectedRoomId);
+            if(room) {
+                window.location.href = `paiements.html?room_id=${room.id}&room_number=${encodeURIComponent(room.number)}&client=${encodeURIComponent(room.client || '')}`;
+            }
+        }
+
+        function updateNetworkToast(status) {
+            const statusToast = document.getElementById('network-status-toast');
+            if (!statusToast) return;
+            
+            if (status === "online" && navigator.onLine) {
+                statusToast.className = "text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold";
+                statusToast.innerText = "Synchronisé";
+            } else if (status === "syncing") {
+                statusToast.className = "text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse";
+                statusToast.innerText = "Synchronisation en cours...";
+            } else {
+                statusToast.className = "text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-bold";
+                statusToast.innerText = "Mode Hors-ligne / En attente";
+            }
+        }
+        window.updateNetworkToast = updateNetworkToast;
+
+        window.addEventListener('online', () => updateNetworkToast("syncing"));
+        window.addEventListener('offline', () => updateNetworkToast("offline"));
+
+        function logout() {
+            if(confirm("Quitter la session ?")) {
+                sessionStorage.removeItem('HOTEL_SMART_auth');
+                window.location.href = 'login.html';
+            }
+        }
+
+        let deferredPrompt;
+        const installBtn = document.getElementById('pwa-install-btn');
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker enregistré.', reg.scope))
+                    .catch(err => console.log('Échec Service Worker : ', err));
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (installBtn) {
+                installBtn.style.display = 'flex';
+            }
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        deferredPrompt = null;
+                        installBtn.style.display = 'none';
+                    });
+                }
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            if (installBtn) {
+                installBtn.style.display = 'none';
+            }
+            deferredPrompt = null;
+        });
+        window.loadConfiguredCatalogues = loadConfiguredCatalogues;
+    </script>
+</body>
+</html>

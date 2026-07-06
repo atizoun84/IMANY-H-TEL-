@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recherche & Archives - HotelSmart</title>
+    
+    <meta name="theme-color" content="#075E54">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HotelSmart">
+    <link class="apple-touch-icon" href="logo maison.png">
+    
+    <link class="manifest" href="manifest.json">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        whatsapp: {
+                            dark: '#075E54',
+                            teal: '#128C7E',
+                            light: '#25D366',
+                            bg: '#F0F2F5',
+                            card: '#FFFFFF'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex justify-center items-center p-0">
+
+    <div class="w-full h-screen bg-whatsapp-bg overflow-hidden flex flex-col relative border border-gray-200">
+        
+        <div id="sidebarOverlay" class="absolute inset-0 bg-black/50 z-40 hidden transition-opacity duration-300 opacity-0"></div>
+
+        <aside id="sidebarMenu" class="absolute top-0 bottom-0 left-0 w-64 bg-[#222e35] text-gray-300 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-2xl">
+            <div class="p-4 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal text-white flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-hotel text-xl"></i>
+                    <span class="font-bold text-sm tracking-wide">Menu Gestion</span>
+                </div>
+                <button id="closeMenuBtn" class="text-white text-xl focus:outline-none hover:opacity-80">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-none">
+                <a href="index.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-house w-5"></i>
+                    <span class="text-sm">Accueil</span>
+                </a>
+                <a href="contrats.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-bed w-5"></i>
+                    <span class="text-sm">Chambres</span>
+                </a>
+                <a href="contrat_locataires.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-users w-5"></i>
+                    <span class="text-sm">Clients</span>
+                </a>
+                <a href="paiements.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-money-bill-wave w-5"></i>
+                    <span class="text-sm">Paiements</span>
+                </a>
+                <a href="comptabilite.html" id="nav-comptabilite" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-calculator w-5"></i>
+                    <span class="text-sm">Comptabilité</span>
+                </a>
+                <a href="recherche.html" class="flex items-center space-x-3 px-4 py-3 rounded-xl bg-whatsapp-teal text-white font-medium transition-colors">
+                    <i class="fa-solid fa-magnifying-glass w-5"></i>
+                    <span class="text-sm">Recherche</span>
+                </a>
+                <div class="border-t border-gray-700/60 my-4"></div>
+                <a href="config.html" id="nav-config" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-slate-700/50 hover:text-white transition-colors text-gray-300">
+                    <i class="fa-solid fa-gear w-5"></i>
+                    <span class="text-sm">Configuration PMS</span>
+                </a>
+                <a href="#" onclick="logout()" class="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-red-900/30 text-amber-500 transition-colors">
+                    <i class="fa-solid fa-sign-out-alt w-5"></i>
+                    <span class="text-sm">Quitter</span>
+                </a>
+            </nav>
+            <div class="p-4 border-t border-gray-700/60 text-xs text-gray-500 text-center" id="sidebar-user-info">
+                v1.2.0 - PWA Connect
+            </div>
+        </aside>
+
+        <header class="sticky top-0 bg-gradient-to-r from-whatsapp-dark to-whatsapp-teal px-4 pt-4 pb-3 flex justify-between items-center shadow-md z-30 shrink-0">
+            <button id="openMenuBtn" class="text-white text-xl focus:outline-none"><i class="fa-solid fa-bars"></i></button>
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <span id="header-name-display">HotelSmart</span>
+                <span id="network-status-toast" class="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">Initialisation...</span>
+            </h1>
+            <div class="flex items-center">
+                <img src="logo maison.png" alt="Logo" id="header-logo-display" class="w-10 h-10 object-contain rounded-full border border-white/20 bg-white/10 p-0.5" onerror="this.style.display='none';">
+            </div>
+        </header>
+
+        <button id="pwa-install-btn" class="fixed bottom-20 left-4 z-40 bg-[#128C7E] hover:bg-[#075E54] text-white font-bold text-xs py-2.5 px-4 rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 hidden items-center gap-2">
+            <i class="fa-solid fa-download"></i> Installer l'application
+        </button>
+
+        <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-12">
+            
+            <div>
+                <h2 class="text-xl font-bold text-gray-900 flex items-center gap-1">
+                    Moteur de Recherche Global 🔍
+                </h2>
+                <p class="text-xs text-gray-500 font-medium mt-0.5">Retrouvez instantanément un client, une chambre ou un flux financier archivé</p>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm space-y-3 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="space-y-1.5 col-span-1 sm:col-span-2">
+                        <label class="block font-bold text-gray-700">Recherche par mot-clé</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </span>
+                            <input type="text" id="search-query" oninput="executeGlobalSearch()" placeholder="Nom du client, numéro de chambre, motif de décaissement..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-gray-700">Périmètre d'analyse</label>
+                        <select id="search-scope" onchange="executeGlobalSearch()" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                            <option value="all">Tout inspecter (Global)</option>
+                            <option value="clients">Fiches Clients & Occupants</option>
+                            <option value="payments">Flux d'Encaissements (Entrées)</option>
+                            <option value="expenses">Flux de Décaissements (Sorties)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-xs font-bold text-gray-500 px-1 flex justify-between items-center">
+                <span id="search-counter-indicator">0 résultat trouvé</span>
+                <button onclick="clearSearchFilters()" class="text-whatsapp-teal hover:underline flex items-center gap-1">
+                    <i class="fa-solid fa-arrows-rotate"></i> Réinitialiser
+                </button>
+            </div>
+
+            <div class="space-y-3" id="search-results-container">
+            </div>
+
+        </main>
+
+        <footer class="bg-white text-gray-500 text-center py-4 border-t border-gray-200 text-xs mt-auto space-y-1 shrink-0">
+            <p class="font-bold text-gray-800">HotelSmart <span class="text-whatsapp-teal">Agencies</span></p>
+            <p class="text-[10px] opacity-60">&copy; 2026 - Tous droits réservés.</p>
+        </footer>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getDatabase, ref, onValue, set, push, remove, child } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmlcMYeoeo4ESVWgzTC2zdq4lheqwbOyc",
+            authDomain: "imany-hotel.firebaseapp.com",
+            databaseURL: "https://imany-hotel-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "imany-hotel",
+            storageBucket: "imany-hotel.firebasestorage.app",
+            messagingSenderId: "941252716027",
+            appId: "1:941252716027:web:63b91f87c4f3fc7f07975e"
+        };
+
+        // Initialisation de Firebase et de la base de données
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Références globales pour la synchronisation
+        const roomsRef = ref(db, 'rooms');
+        const paymentsRef = ref(db, 'payments');
+        const expensesRef = ref(db, 'expenses');
+
+        // Écoute de l'état de connexion Firebase Realtime Database
+        const connectedRef = ref(db, ".info/connected");
+        onValue(connectedRef, (snap) => {
+            const statusToast = document.getElementById('network-status-toast');
+            if (!statusToast) return;
+            
+            if (snap.val() === true) {
+                statusToast.className = "text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold";
+                statusToast.innerText = "Synchronisé";
+            } else {
+                statusToast.className = "text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse";
+                statusToast.innerText = "Mode Hors-ligne / En attente de connexion";
+            }
+        });
+
+        // Écoute en temps réel et mise en cache locale automatique (Stratégie Cloud First avec repli)
+        onValue(roomsRef, (snapshot) => {
+            const data = snapshot.val();
+            window.rooms = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+            localStorage.setItem('HOTEL_SMART_rooms', JSON.stringify(window.rooms));
+            window.executeGlobalSearch();
+        });
+
+        onValue(paymentsRef, (snapshot) => {
+            const data = snapshot.val();
+            window.paymentsLog = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+            localStorage.setItem('HOTEL_SMART_payments', JSON.stringify(window.paymentsLog));
+            window.executeGlobalSearch();
+        });
+
+        onValue(expensesRef, (snapshot) => {
+            const data = snapshot.val();
+            window.expensesLog = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+            localStorage.setItem('HOTEL_SMART_expenses', JSON.stringify(window.expensesLog));
+            window.executeGlobalSearch();
+        });
+
+        // Lecture du nom de l'établissement depuis company_data
+        onValue(ref(db, 'company_data'), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                if (data.masterCode && !window.userSecurityCode) {
+                    window.userSecurityCode = data.masterCode;
+                }
+                if (data.company && data.company.name) {
+                    document.getElementById('header-name-display').innerText = data.company.name;
+                }
+            }
+        });
+
+        // Exportation des fonctions d'architecture CRUD Standard pour le reste du PMS
+        window.FirebaseCloud = {
+            createRecord: function(path, data) {
+                const newRef = push(ref(db, path));
+                return set(newRef, data);
+            },
+            readRecord: function(path, callback) {
+                onValue(ref(db, path), (snapshot) => {
+                    callback(snapshot.val());
+                });
+            },
+            updateRecord: function(path, data) {
+                return set(ref(db, path), data);
+            },
+            deleteRecord: function(path) {
+                return remove(ref(db, path));
+            }
+        };
+    </script>
+
+    <script>
+        // Logique structurelle de la Sidebar Navigation
+        const openMenuBtn = document.getElementById('openMenuBtn');
+        const closeMenuBtn = document.getElementById('closeMenuBtn');
+        const sidebarMenu = document.getElementById('sidebarMenu');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function openMenu() {
+            sidebarOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                sidebarOverlay.classList.remove('opacity-0');
+                sidebarOverlay.classList.add('opacity-100');
+                sidebarMenu.classList.remove('-translate-x-full');
+            }, 10);
+        }
+
+        function closeMenu() {
+            sidebarMenu.classList.add('-translate-x-full');
+            sidebarOverlay.classList.remove('opacity-100');
+            sidebarOverlay.classList.add('opacity-0');
+            setTimeout(() => {
+                sidebarOverlay.classList.add('hidden');
+            }, 300);
+        }
+
+        openMenuBtn.addEventListener('click', openMenu);
+        closeMenuBtn.addEventListener('click', closeMenu);
+        sidebarOverlay.addEventListener('click', closeMenu);
+
+        // --- Moteur de Données Local & Filtres de Recherche ---
+        window.rooms = [];
+        window.paymentsLog = [];
+        window.expensesLog = [];
+        window.userSecurityCode = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConnectedUserSession();
+            importDataFromStorage();
+            window.executeGlobalSearch();
+        });
+
+        function loadConnectedUserSession() {
+            const sessionData = sessionStorage.getItem('HOTEL_SMART_auth');
+            if (!sessionData) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            try {
+                const session = JSON.parse(sessionData);
+                window.userSecurityCode = session.code || null;
+                
+                const navComptabilite = document.getElementById('nav-comptabilite');
+                const navConfig = document.getElementById('nav-config');
+                const sidebarUserInfo = document.getElementById('sidebar-user-info');
+                
+                if (sidebarUserInfo && session.user) {
+                    sidebarUserInfo.innerHTML = `
+                        <div class="flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-circle text-[6px] text-emerald-400"></i>
+                            <span class="font-medium">${session.user}</span>
+                        </div>
+                        <div class="text-[10px] opacity-70 mt-0.5">${session.role} • v1.2.0</div>
+                    `;
+                }
+                
+                if (session.role === 'Propriétaire') {
+                    if (navComptabilite) navComptabilite.style.display = 'flex';
+                    if (navConfig) navConfig.style.display = 'flex';
+                } else if (session.role === 'Gérant' || session.role === 'Employé') {
+                    if (navComptabilite) navComptabilite.style.display = 'none';
+                    if (navConfig) navConfig.style.display = 'none';
+                }
+            } catch (e) {
+                sessionStorage.removeItem('HOTEL_SMART_auth');
+                window.location.href = 'login.html';
+            }
+        }
+
+        function importDataFromStorage() {
+            window.rooms = JSON.parse(localStorage.getItem('HOTEL_SMART_rooms')) || [];
+            window.paymentsLog = JSON.parse(localStorage.getItem('HOTEL_SMART_payments')) || [];
+            window.expensesLog = JSON.parse(localStorage.getItem('HOTEL_SMART_expenses')) || [];
+        }
+
+        function clearSearchFilters() {
+            document.getElementById('search-query').value = '';
+            document.getElementById('search-scope').value = 'all';
+            window.executeGlobalSearch();
+        }
+
+        window.executeGlobalSearch = function() {
+            const query = document.getElementById('search-query').value.trim().toLowerCase();
+            const scope = document.getElementById('search-scope').value;
+            const container = document.getElementById('search-results-container');
+            
+            let htmlResults = [];
+            let matchCount = 0;
+
+            // 1. Extraction Scope : CLIENTS / CHAMBRES ACTIVEES
+            if (scope === 'all' || scope === 'clients') {
+                window.rooms.forEach(r => {
+                    if (!r) return;
+                    const clientName = (r.client || 'Chambre Libre').toLowerCase();
+                    const roomNum = (r.number || '').toLowerCase();
+                    const phone = (r.phone || '').toLowerCase();
+                    
+                    if (query === '' || clientName.includes(query) || roomNum.includes(query) || phone.includes(query)) {
+                        matchCount++;
+                        htmlResults.push(`
+                            <div class="bg-white p-3.5 rounded-2xl border border-l-4 border-l-emerald-500 border-gray-200/80 shadow-sm text-xs flex justify-between items-center">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-black text-[10px]">OCCUPANT CH. ${r.number}</span>
+                                        <span class="text-gray-400 font-medium">${r.arrivalDate || 'Pas de date'}</span>
+                                    </div>
+                                    <p class="font-bold text-gray-900 text-sm">${r.client || 'Aucun nom renseigné'}</p>
+                                    <p class="text-gray-500 font-medium"><i class="fa-solid fa-phone text-[10px]"></i> Contact : ${r.phone || 'Non spécifié'}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-black text-gray-900">${(parseInt(r.price) || 0).toLocaleString()} CFA</span>
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase mt-0.5">${r.status || 'Actif'}</p>
+                                </div>
+                            </div>
+                        `);
+                    }
+                });
+            }
+
+            // 2. Extraction Scope : ENCAISSEMENTS (PAYMENTS)
+            if (scope === 'all' || scope === 'payments') {
+                window.paymentsLog.forEach(p => {
+                    if (!p) return;
+                    const client = (p.client || '').toLowerCase();
+                    const room = (p.roomNumber || '').toLowerCase();
+                    const details = (p.details || '').toLowerCase();
+                    const category = (p.category || '').toLowerCase();
+
+                    if (query === '' || client.includes(query) || room.includes(query) || details.includes(query) || category.includes(query)) {
+                        matchCount++;
+                        htmlResults.push(`
+                            <div class="bg-white p-3.5 rounded-2xl border border-l-4 border-l-whatsapp-teal border-gray-200/80 shadow-sm text-xs flex justify-between items-center">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="bg-teal-50 text-whatsapp-teal px-2 py-0.5 rounded font-black text-[10px]">ENCAISSEMENT REÇU</span>
+                                        <span class="text-gray-400 font-medium">${p.date || ''}</span>
+                                    </div>
+                                    <p class="font-bold text-gray-900">Chambre ${p.roomNumber || 'N/A'} — Client : ${p.client || 'Inconnu'}</p>
+                                    <p class="text-gray-500 font-medium italic">${p.details || p.category || 'Aucune spécification'}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-black text-whatsapp-teal text-sm">+ ${(parseInt(p.amount) || 0).toLocaleString()} CFA</span>
+                                    <p class="text-[10px] text-emerald-600 font-bold mt-0.5"><i class="fa-solid fa-circle-check"></i> Caisse</p>
+                                </div>
+                            </div>
+                        `);
+                    }
+                });
+            }
+
+            // 3. Extraction Scope : DÉCAISSEMENTS (EXPENSES)
+            if (scope === 'all' || scope === 'expenses') {
+                window.expensesLog.forEach(e => {
+                    if (!e) return;
+                    const reason = (e.reason || '').toLowerCase();
+                    const type = (e.type || '').toLowerCase();
+
+                    if (query === '' || reason.includes(query) || type.includes(query)) {
+                        matchCount++;
+                        let badgeColor = "bg-red-50 text-red-700";
+                        if(e.type && e.type.includes('Salaire')) badgeColor = "bg-amber-50 text-amber-700";
+                        if(e.type && e.type.includes('Bénéfice')) badgeColor = "bg-purple-50 text-purple-700";
+
+                        htmlResults.push(`
+                            <div class="bg-white p-3.5 rounded-2xl border border-l-4 border-l-red-500 border-gray-200/80 shadow-sm text-xs flex justify-between items-center">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="${badgeColor} px-2 py-0.5 rounded font-black text-[10px] uppercase">${e.type || 'Dépense'}</span>
+                                        <span class="text-gray-400 font-medium">${e.date || ''}</span>
+                                    </div>
+                                    <p class="font-bold text-gray-900">${e.reason || 'Aucun motif'}</p>
+                                    <p class="text-[10px] text-gray-400 font-medium">ID Archive : ${e.id || 'N/A'}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-black text-red-600 text-sm">- ${(parseInt(e.amount) || 0).toLocaleString()} CFA</span>
+                                    <p class="text-[10px] text-red-500 font-bold mt-0.5"><i class="fa-solid fa-building-columns"></i> Sortie Réglée</p>
+                                </div>
+                            </div>
+                        `);
+                    }
+                });
+            }
+
+            // Mise à jour de l'affichage des compteurs
+            document.getElementById('search-counter-indicator').innerText = `${matchCount} résultat${matchCount > 1 ? 's' : ''} trouvé${matchCount > 1 ? 's' : ''}`;
+
+            // Injection dynamique
+            if (htmlResults.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center bg-white rounded-2xl border border-gray-200/80 shadow-sm">
+                        <i class="fa-solid fa-folder-open text-gray-300 text-4xl mb-2"></i>
+                        <p class="text-xs text-gray-400 italic">Aucune donnée archivée ne correspond à vos critères de filtrage.</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = htmlResults.join('');
+            }
+        }
+
+        // Nettoyage de session
+        function logout() {
+            if(confirm("Quitter la session ?")) {
+                sessionStorage.removeItem('HOTEL_SMART_auth');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Logic Progressive Web App (PWA)
+        let deferredPrompt;
+        const installBtn = document.getElementById('pwa-install-btn');
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker enregistré avec succès pour la page Recherche.', reg.scope))
+                    .catch(err => console.log('Échec de l\'enregistrement du Service Worker :', err));
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'flex';
+        });
+
+        installBtn.addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('L\'utilisateur a accepté l\'installation.');
+                    }
+                    deferredPrompt = null;
+                    installBtn.style.display = 'none';
+                });
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            installBtn.style.display = 'none';
+            deferredPrompt = null;
+        });
+    </script>
+</body>
+</html>
