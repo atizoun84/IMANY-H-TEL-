@@ -227,6 +227,27 @@
             background: #fef3c7;
             color: #b45309;
         }
+        /* Toggle history button */
+        .toggle-history-btn {
+            background: none;
+            border: none;
+            color: #128C7E;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+        .toggle-history-btn:hover {
+            color: #075E54;
+        }
+        .history-container {
+            transition: all 0.3s ease;
+        }
+        .history-container.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex justify-center items-center p-0">
@@ -377,6 +398,12 @@
                     </div>
                 </div>
 
+                <!-- Nouvelle case à cocher pour libérer la chambre -->
+                <div class="border-t pt-3 flex items-center gap-3">
+                    <input type="checkbox" id="release-room-checkbox" class="w-4 h-4 text-whatsapp-teal border-gray-300 rounded focus:ring-whatsapp-teal">
+                    <label for="release-room-checkbox" class="font-bold text-gray-700 text-xs">Libérer la chambre après ce paiement (si solde total réglé)</label>
+                </div>
+
                 <div class="flex flex-col sm:flex-row justify-end gap-2 pt-2">
                     <button id="cancel-selection-btn" onclick="clearFormSelection()" class="w-full sm:w-auto bg-gray-200 text-gray-700 font-bold px-5 py-3 rounded-xl hover:bg-gray-300 transition flex items-center justify-center gap-2 hidden">
                         <i class="fa-solid fa-xmark"></i> Annuler la sélection
@@ -388,10 +415,15 @@
             </div>
 
             <div class="space-y-2">
-                <h3 class="text-sm font-bold text-gray-800 flex items-center gap-1">
-                    <i class="fa-solid fa-clock-rotate-left text-whatsapp-teal"></i> Historique des encaissements récents
-                </h3>
-                <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-gray-800 flex items-center gap-1">
+                        <i class="fa-solid fa-clock-rotate-left text-whatsapp-teal"></i> Historique des encaissements récents
+                    </h3>
+                    <button id="toggle-history-btn" class="toggle-history-btn">
+                        <i class="fa-solid fa-chevron-down"></i> Masquer
+                    </button>
+                </div>
+                <div id="history-container" class="history-container bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs border-collapse">
                             <thead>
@@ -649,6 +681,22 @@
             checkUrlParameters();
             updateNetworkStatus();
             loadConnectedUserSession();
+            
+            // Gestion du toggle historique
+            const toggleBtn = document.getElementById('toggle-history-btn');
+            const historyContainer = document.getElementById('history-container');
+            let historyVisible = true;
+            
+            toggleBtn.addEventListener('click', function() {
+                historyVisible = !historyVisible;
+                if (historyVisible) {
+                    historyContainer.classList.remove('hidden');
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-chevron-down"></i> Masquer';
+                } else {
+                    historyContainer.classList.add('hidden');
+                    toggleBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i> Afficher';
+                }
+            });
         });
 
         function loadConnectedUserSession() {
@@ -730,6 +778,7 @@
             document.getElementById('payment-amount-input').value = '';
             document.getElementById('cancel-selection-btn').classList.add('hidden');
             document.getElementById('departure-date-select').value = '';
+            document.getElementById('release-room-checkbox').checked = false;
             globalCalculatedTotal = 0;
         }
         window.clearFormSelection = clearFormSelection;
@@ -904,6 +953,7 @@
             const methodSelect = document.getElementById('payment-method');
             const payerInput = document.getElementById('payment-payer-name');
             const genderSelect = document.getElementById('payment-payer-gender');
+            const releaseCheckbox = document.getElementById('release-room-checkbox');
 
             if(!select.value) {
                 alert("Veuillez sélectionner une chambre valide.");
@@ -959,7 +1009,28 @@
                 localStorage.setItem('HOTEL_SMART_payments', JSON.stringify(window.paymentsLog));
             }
 
-            if(amountPaid >= globalCalculatedTotal) {
+            // Vérifier si le paiement règle le solde et si la case est cochée
+            const remainingAfterPayment = globalCalculatedTotal - amountPaid;
+            const shouldRelease = releaseCheckbox.checked && remainingAfterPayment <= 0;
+
+            if (shouldRelease) {
+                // Libérer la chambre : passer en 'Entretien'
+                const updatedRoom = {
+                    status: 'Entretien',
+                    client: '',
+                    meals: { pdej: false, dej: false, din: false },
+                    mealsDetails: { pdej: { menu: '', price: '' }, dej: { menu: '', price: '' }, din: { menu: '', price: '' } },
+                    drinks: []
+                };
+                window.rooms[roomIndex] = { ...window.rooms[roomIndex], ...updatedRoom };
+                
+                if (window.FirebaseBridge) {
+                    window.FirebaseBridge.updateRoom(targetRoom.id, updatedRoom)
+                        .catch(err => console.error("Erreur mise à jour chambre :", err));
+                }
+                showFullscreenSuccess("Paiement enregistré et chambre libérée !");
+            } else if (remainingAfterPayment <= 0) {
+                // Solde réglé mais case non cochée : proposer la libération
                 if(confirm(`💰 Règlement du solde restant effectué par ${fullPayerIdentity} pour la chambre ${targetRoom.number}. Souhaitez-vous libérer la chambre et la basculer en 'Entretien (Ménage)' ?`)) {
                     const updatedRoom = {
                         status: 'Entretien',
@@ -974,12 +1045,15 @@
                         window.FirebaseBridge.updateRoom(targetRoom.id, updatedRoom)
                             .catch(err => console.error("Erreur mise à jour chambre :", err));
                     }
+                    showFullscreenSuccess("Chambre libérée avec succès !");
+                } else {
+                    showFullscreenSuccess("Paiement enregistré !");
                 }
             } else {
                 alert(`💵 Paiement partiel de ${amountPaid.toLocaleString()} CFA par ${fullPayerIdentity} enregistré. Le reste à payer est mis à jour.`);
+                showFullscreenSuccess("Paiement partiel enregistré !");
             }
 
-            showFullscreenSuccess("Paiement hébergement enregistré !");
             clearFormSelection();
             populateRoomsSelect();
             renderPaymentsHistory();
