@@ -169,12 +169,16 @@
                 </div>
                 <div class="p-5 space-y-4 text-xs text-gray-600 max-h-[70vh] overflow-y-auto scrollbar-none">
                     <div class="bg-gray-50 p-3 rounded-xl space-y-2 border border-gray-100 flex justify-between items-center">
-                        <div class="space-y-1">
+                        <div class="flex-1">
                             <p class="font-bold text-whatsapp-teal text-sm flex items-center gap-1.5">
                                 <i class="fa-solid fa-money-bill-wave"></i> <span id="modal-room-price">0</span> CFA / Nuit
                             </p>
                             <p class="text-gray-500 italic flex items-start gap-1.5">
                                 <i class="fa-solid fa-circle-info mt-0.5"></i> <span id="modal-room-desc">Aucune description</span>
+                            </p>
+                            <!-- Nouvelle ligne pour le site -->
+                            <p class="text-xs mt-1 flex items-center gap-1.5">
+                                <i class="fa-solid fa-hotel"></i> Site : <span id="modal-room-site" class="font-medium text-gray-800">Chargement...</span>
                             </p>
                         </div>
                         <button onclick="redirectToPayment()" class="bg-amber-50 text-white font-bold px-3 py-2 rounded-xl hover:bg-amber-600 shadow transition flex items-center gap-1">
@@ -315,7 +319,6 @@
 
         const connectedRef = ref(db, ".info/connected");
         onValue(connectedRef, (snap) => {
-            // Sécurisation de l'appel asynchrone avant l'initialisation du second script
             if (typeof window.updateNetworkToast === "function") {
                 if (snap.val() === true) {
                     window.updateNetworkToast("online");
@@ -325,6 +328,7 @@
             }
         });
 
+        // Écouteur pour les données de l'entreprise (nom, etc.)
         onValue(ref(db, 'company_data'), (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -342,6 +346,7 @@
             }
         });
 
+        // Écouteur pour les boissons
         onValue(ref(db, 'drinks'), (snapshot) => {
             const data = snapshot.val();
             window.configuredDrinks = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
@@ -350,6 +355,7 @@
             }
         });
 
+        // Écouteur pour les menus
         onValue(ref(db, 'menus'), (snapshot) => {
             const data = snapshot.val();
             window.configuredMenus = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
@@ -358,6 +364,22 @@
             }
         });
 
+        // Écouteur pour les sites (nouveau)
+        window.sites = [];
+        onValue(ref(db, 'sites'), (snapshot) => {
+            const data = snapshot.val();
+            window.sites = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+            // Si la fonction searchRooms est disponible, on rafraîchit l'affichage
+            if (typeof window.searchRooms === "function") {
+                window.searchRooms();
+            }
+            // Mettre à jour également le modal si ouvert
+            if (window.currentSelectedRoomId && typeof window.refreshModalSite === "function") {
+                window.refreshModalSite();
+            }
+        });
+
+        // Écouteur pour les chambres
         onValue(window.FirebaseBridge.roomsRef, (snapshot) => {
             if (typeof window.updateNetworkToast === "function") {
                 window.updateNetworkToast("syncing");
@@ -380,6 +402,7 @@
                 meals: room.meals || { pdej: false, dej: false, din: false },
                 mealsDetails: room.mealsDetails || { pdej: { menu: '', price: '' }, dej: { menu: '', price: '' }, din: { menu: '', price: '' } },
                 drinks: room.drinks || [],
+                siteId: room.siteId || null, // Nouveau champ
                 ...room
             }));
             
@@ -404,7 +427,6 @@
         const sidebarMenu = document.getElementById('sidebarMenu');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-        // Correction pour s'assurer que l'animation d'ouverture s'exécute correctement
         function openMenu() {
             sidebarOverlay.classList.remove('hidden');
             setTimeout(() => {
@@ -428,13 +450,14 @@
         sidebarOverlay.addEventListener('click', closeMenu);
 
         window.rooms = [];
+        window.sites = []; // Déclaration globale
         window.configuredDrinks = [];
         window.configuredMenus = [];
         window.hotelCompanyData = null;
         let currentSelectedRoomId = null;
         let isModalUnlocked = false;
         window.SECURITY_PIN = "1234"; 
-        window.userSecurityCode = ""; // Stockage dynamique du code secret de l'utilisateur connecté
+        window.userSecurityCode = "";
 
         document.addEventListener('DOMContentLoaded', function() {
             loadConnectedUserSession();
@@ -443,14 +466,12 @@
         });
 
         function loadConnectedUserSession() {
-            // Utilisation unifiée de sessionStorage pour la persistance de l'authentification
             const authData = JSON.parse(sessionStorage.getItem('HOTEL_SMART_auth'));
             if (authData && authData.user) {
                 document.getElementById('sidebar-auth-user').innerText = authData.user;
                 document.getElementById('sidebar-auth-role').innerText = authData.role || "Utilisateur";
-                window.userSecurityCode = authData.code || ""; // Récupération sécurisée du code d'accès de la session
+                window.userSecurityCode = authData.code || "";
 
-                // Filtrage dynamique des privilèges de navigation selon le rôle utilisateur
                 const userRole = authData.role;
                 if (userRole === "Gérant" || userRole === "Employé") {
                     const configLink = document.getElementById('menu-config');
@@ -531,6 +552,11 @@
                     infoContent = `<p class="text-amber-600"><i class="fa-solid fa-broom mr-1"></i> Ménage en cours...</p>`;
                 }
 
+                // Récupération du site
+                const site = window.sites.find(s => s.id === r.siteId);
+                const siteName = site ? site.name : 'Site non défini';
+                const siteColor = site ? 'text-gray-500' : 'text-red-500';
+
                 return `
                     <div onclick="openRoomModal('${r.id}')" class="bg-white rounded-2xl p-4 shadow-sm ${borderClass} space-y-3 cursor-pointer hover:shadow-md transition transform active:scale-[0.99]">
                         <div class="flex justify-between items-start">
@@ -542,6 +568,9 @@
                         </div>
                         <div class="text-xs text-gray-600 space-y-1">
                             <p class="font-semibold text-whatsapp-teal"><i class="fa-solid fa-money-bill-wave mr-1"></i> ${(parseFloat(r.price) || 0).toLocaleString()} CFA / Nuit</p>
+                            <p class="text-xs flex items-center gap-1">
+                                <i class="fa-solid fa-hotel"></i> <span class="${siteColor}">${siteName}</span>
+                            </p>
                             ${infoContent}
                         </div>
                         <div class="pt-2 border-t border-gray-100 flex justify-end text-[11px] text-whatsapp-teal font-bold tracking-wide">
@@ -563,6 +592,17 @@
             document.getElementById('modal-room-price').innerText = (parseFloat(room.price) || 0).toLocaleString();
             document.getElementById('modal-room-desc').innerText = room.desc || "Aucune description renseignée.";
             
+            // Affichage du site
+            const site = window.sites.find(s => s.id === room.siteId);
+            const siteDisplay = document.getElementById('modal-room-site');
+            if (site) {
+                siteDisplay.innerText = site.name;
+                siteDisplay.className = "font-medium text-gray-800";
+            } else {
+                siteDisplay.innerText = "Site non défini";
+                siteDisplay.className = "font-medium text-red-600";
+            }
+
             const statusSelect = document.getElementById('modal-status-select');
             statusSelect.value = room.status || 'Disponible';
             
@@ -605,7 +645,7 @@
             };
             statusSelect.onchange();
 
-            isModalUnlocked = false; // Initialisé verrouillé à l'ouverture pour exiger l'authentification
+            isModalUnlocked = false;
             applyModalLockState();
 
             const modal = document.getElementById('roomModal');
@@ -616,6 +656,22 @@
             }, 10);
         }
         window.openRoomModal = openRoomModal;
+
+        // Fonction pour rafraîchir l'affichage du site dans le modal (appelée quand les sites changent)
+        window.refreshModalSite = function() {
+            if (!currentSelectedRoomId) return;
+            const room = window.rooms.find(r => r.id === currentSelectedRoomId);
+            if (!room) return;
+            const site = window.sites.find(s => s.id === room.siteId);
+            const siteDisplay = document.getElementById('modal-room-site');
+            if (site) {
+                siteDisplay.innerText = site.name;
+                siteDisplay.className = "font-medium text-gray-800";
+            } else {
+                siteDisplay.innerText = "Site non défini";
+                siteDisplay.className = "font-medium text-red-600";
+            }
+        };
 
         function applyModalLockState() {
             const inputs = document.querySelectorAll('#roomModal input, #roomModal select');
@@ -738,7 +794,6 @@
             const inputCode = prompt("🔒 Sécurité : Saisissez le code secret pour modifier cette fiche :");
             if(inputCode === null) return;
             
-            // Comparaison intelligente avec window.userSecurityCode lié à la session connectée
             if(String(inputCode) === String(window.userSecurityCode) && window.userSecurityCode !== "") {
                 isModalUnlocked = true;
                 applyModalLockState();
@@ -769,7 +824,6 @@
             }
         }
 
-        // Ajustement pour s'assurer du basculement correct des formulaires repas
         function toggleMealInputs(type) {
             const checkbox = document.getElementById(`restau-${type}`);
             const box = document.getElementById(`box-${type}`);

@@ -350,6 +350,14 @@
                     </div>
                 </div>
 
+                <!-- Affichage du site hôtelier associé -->
+                <div class="bg-slate-50 border border-gray-200/60 rounded-xl p-3 flex items-center justify-between">
+                    <span class="font-bold text-gray-700 text-xs flex items-center gap-2">
+                        <i class="fa-solid fa-hotel"></i> Site hôtelier :
+                    </span>
+                    <span id="payment-room-site" class="text-sm font-bold text-gray-800">Aucun</span>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t pt-3">
                     <div class="space-y-1.5 sm:col-span-1">
                         <label class="block font-bold text-gray-700">Civilité du Payeur</label>
@@ -408,7 +416,10 @@
                     <button id="cancel-selection-btn" onclick="clearFormSelection()" class="w-full sm:w-auto bg-gray-200 text-gray-700 font-bold px-5 py-3 rounded-xl hover:bg-gray-300 transition flex items-center justify-center gap-2 hidden">
                         <i class="fa-solid fa-xmark"></i> Annuler la sélection
                     </button>
-                    <button onclick="processPaymentSubmit()" class="w-full sm:w-auto bg-whatsapp-teal text-white font-bold px-6 py-3 rounded-xl shadow hover:bg-whatsapp-dark transition flex items-center justify-center gap-2">
+                    <button id="edit-cancel-btn" onclick="cancelEditPayment()" class="w-full sm:w-auto bg-gray-200 text-gray-700 font-bold px-5 py-3 rounded-xl hover:bg-gray-300 transition flex items-center justify-center gap-2 hidden">
+                        <i class="fa-solid fa-ban"></i> Annuler la modification
+                    </button>
+                    <button onclick="processPaymentSubmit()" id="payment-submit-btn" class="w-full sm:w-auto bg-whatsapp-teal text-white font-bold px-6 py-3 rounded-xl shadow hover:bg-whatsapp-dark transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-receipt"></i> Valider le Paiement
                     </button>
                 </div>
@@ -545,6 +556,9 @@
             addPayment: function(paymentData) {
                 return push(ref(this.db, 'payments'), paymentData);
             },
+            updatePayment: function(paymentId, paymentData) {
+                return update(ref(this.db, `payments/${paymentId}`), paymentData);
+            },
             deletePayment: function(paymentId) {
                 return remove(ref(this.db, `payments/${paymentId}`));
             }
@@ -585,6 +599,19 @@
             window.configuredMenus = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
         });
 
+        // Écouteur pour les sites (ajouté)
+        window.sites = [];
+        onValue(ref(db, 'sites'), (snapshot) => {
+            const data = snapshot.val();
+            window.sites = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+            // Rafraîchir la liste des chambres si déjà chargée
+            window.populateRoomsSelect();
+            // Mettre à jour l'affichage du site si une chambre est sélectionnée
+            if (document.getElementById('payment-room-select').value) {
+                window.handleRoomSelectionChange();
+            }
+        });
+
         onValue(window.FirebaseBridge.roomsRef, (snapshot) => {
             window.updateNetworkToast("syncing");
             const data = snapshot.val();
@@ -605,6 +632,7 @@
                 meals: room.meals || { pdej: false, dej: false, din: false },
                 mealsDetails: room.mealsDetails || { pdej: { menu: '', price: '' }, dej: { menu: '', price: '' }, din: { menu: '', price: '' } },
                 drinks: room.drinks || [],
+                siteId: room.siteId || null,
                 ...room
             }));
             
@@ -671,10 +699,12 @@
         // --- Données & Core Logic ---
         window.rooms = [];
         window.paymentsLog = [];
+        window.sites = [];
         let globalCalculatedTotal = 0;
         window.configuredDrinks = [];
         window.configuredMenus = [];
         window.userSecurityCode = null;
+        let editingPaymentId = null; // ID du paiement en cours de modification
 
         document.addEventListener('DOMContentLoaded', function() {
             loadGlobalSettings();
@@ -750,9 +780,12 @@
             const activeRooms = window.rooms.filter(r => r.status === 'Occupée' || r.status === 'Réservée');
             
             activeRooms.forEach(r => {
+                const site = window.sites.find(s => s.id === r.siteId);
+                const siteName = site ? site.name : 'Site non défini';
                 const opt = document.createElement('option');
                 opt.value = r.id;
-                opt.innerText = `Chambre ${r.number} (${r.status}) - ${r.client}`;
+                opt.innerText = `Chambre ${r.number} (${r.status}) - ${r.client} [${siteName}]`;
+                opt.dataset.siteId = r.siteId || '';
                 select.appendChild(opt);
             });
         }
@@ -779,7 +812,10 @@
             document.getElementById('cancel-selection-btn').classList.add('hidden');
             document.getElementById('departure-date-select').value = '';
             document.getElementById('release-room-checkbox').checked = false;
+            document.getElementById('payment-room-site').innerText = 'Aucun';
             globalCalculatedTotal = 0;
+            // Si on est en mode édition, l'annuler
+            if (editingPaymentId) cancelEditPayment();
         }
         window.clearFormSelection = clearFormSelection;
 
@@ -853,6 +889,7 @@
             const amountInput = document.getElementById('payment-amount-input');
             const cancelBtn = document.getElementById('cancel-selection-btn');
             const departureDateInput = document.getElementById('departure-date-select');
+            const siteDisplay = document.getElementById('payment-room-site');
 
             if(!select.value) {
                 clearFormSelection();
@@ -865,6 +902,16 @@
             cancelBtn.classList.remove('hidden');
             clientInput.value = room.client || 'Non spécifié';
             payerInput.value = room.client || '';
+            
+            // Affichage du site
+            const site = window.sites.find(s => s.id === room.siteId);
+            if (site) {
+                siteDisplay.innerText = site.name;
+                siteDisplay.className = "text-sm font-bold text-gray-800";
+            } else {
+                siteDisplay.innerText = "Site non défini";
+                siteDisplay.className = "text-sm font-bold text-red-600";
+            }
             
             if (!departureDateInput.value) {
                 const today = new Date().toISOString().split('T')[0];
@@ -947,6 +994,75 @@
             itemsList.innerHTML += html;
         }
 
+        // --- Gestion de l'édition des paiements ---
+        function editPayment(paymentId) {
+            const payment = window.paymentsLog.find(p => p.id === paymentId);
+            if (!payment) {
+                alert("Paiement introuvable.");
+                return;
+            }
+            // Vérifier les droits
+            const code = prompt("🔒 Entrez le code du Gérant ou du Propriétaire pour modifier ce paiement :");
+            if (String(code) !== String(window.userSecurityCode) && String(code) !== String(window.masterCode)) {
+                alert("Code incorrect. Modification annulée.");
+                return;
+            }
+
+            editingPaymentId = paymentId;
+
+            // Pré-remplir le formulaire
+            document.getElementById('payment-payer-name').value = payment.payer || '';
+            document.getElementById('payment-payer-gender').value = payment.payer?.startsWith('Mme') ? 'Mme' : 'M.';
+            document.getElementById('payment-method').value = payment.method || 'Espèces';
+            document.getElementById('payment-amount-input').value = payment.amount || 0;
+
+            // Si le paiement est lié à une chambre, sélectionner la chambre
+            if (payment.type === 'hebergement' && payment.roomNumber) {
+                const room = window.rooms.find(r => r.number === payment.roomNumber);
+                if (room) {
+                    document.getElementById('payment-room-select').value = room.id;
+                    handleRoomSelectionChange();
+                }
+            } else {
+                // Pour les auxiliaires, on ne peut pas modifier la chambre, on garde la sélection actuelle
+                // On affiche juste un message
+                if (payment.type === 'auxiliaire') {
+                    alert("Modification d'un paiement auxiliaire : seul le montant, le payeur et le mode sont modifiables.");
+                }
+            }
+
+            // Changer le texte du bouton
+            const submitBtn = document.getElementById('payment-submit-btn');
+            submitBtn.innerHTML = '<i class="fa-solid fa-pen"></i> Mettre à jour';
+            submitBtn.classList.remove('bg-whatsapp-teal');
+            submitBtn.classList.add('bg-blue-600');
+
+            // Afficher le bouton Annuler la modification
+            document.getElementById('edit-cancel-btn').classList.remove('hidden');
+            document.getElementById('cancel-selection-btn').classList.add('hidden');
+
+            // Faire défiler vers le formulaire
+            document.querySelector('.bg-white.p-4.rounded-2xl').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        window.editPayment = editPayment;
+
+        function cancelEditPayment() {
+            editingPaymentId = null;
+            const submitBtn = document.getElementById('payment-submit-btn');
+            submitBtn.innerHTML = '<i class="fa-solid fa-receipt"></i> Valider le Paiement';
+            submitBtn.classList.remove('bg-blue-600');
+            submitBtn.classList.add('bg-whatsapp-teal');
+            document.getElementById('edit-cancel-btn').classList.add('hidden');
+            // Réafficher le bouton Annuler la sélection si une chambre est sélectionnée
+            if (document.getElementById('payment-room-select').value) {
+                document.getElementById('cancel-selection-btn').classList.remove('hidden');
+            }
+            // Réinitialiser les champs du formulaire (sans effacer la sélection)
+            // On garde les valeurs actuelles, on ne les réinitialise pas
+        }
+        window.cancelEditPayment = cancelEditPayment;
+
+        // --- Traitement du paiement (ajout ou mise à jour) ---
         function processPaymentSubmit() {
             const select = document.getElementById('payment-room-select');
             const amountInput = document.getElementById('payment-amount-input');
@@ -954,11 +1070,6 @@
             const payerInput = document.getElementById('payment-payer-name');
             const genderSelect = document.getElementById('payment-payer-gender');
             const releaseCheckbox = document.getElementById('release-room-checkbox');
-
-            if(!select.value) {
-                alert("Veuillez sélectionner une chambre valide.");
-                return;
-            }
 
             const amountPaid = parseInt(amountInput.value) || 0;
             if(amountPaid <= 0) {
@@ -972,11 +1083,74 @@
                 return;
             }
 
+            const fullPayerIdentity = `${genderSelect.value} ${payerName}`;
+
+            // Si on est en mode édition
+            if (editingPaymentId) {
+                // Mise à jour du paiement existant
+                const paymentToUpdate = window.paymentsLog.find(p => p.id === editingPaymentId);
+                if (!paymentToUpdate) {
+                    alert("Paiement introuvable pour la mise à jour.");
+                    return;
+                }
+
+                const updatedData = {
+                    payer: fullPayerIdentity,
+                    method: methodSelect.value,
+                    amount: amountPaid,
+                    date: paymentToUpdate.date // on conserve la date d'origine
+                };
+
+                // Pour les paiements hébergement, on peut aussi mettre à jour la chambre si elle a changé
+                if (paymentToUpdate.type === 'hebergement' && select.value) {
+                    const room = window.rooms.find(r => r.id == select.value);
+                    if (room) {
+                        updatedData.roomNumber = room.number;
+                        updatedData.client = room.client;
+                    }
+                }
+
+                // Mise à jour Firebase
+                if (window.FirebaseBridge) {
+                    window.FirebaseBridge.updatePayment(editingPaymentId, updatedData)
+                        .then(() => {
+                            console.log("Paiement mis à jour sur Firebase");
+                            window.updateNetworkToast("online");
+                            // Mettre à jour le log local
+                            Object.assign(paymentToUpdate, updatedData);
+                            showFullscreenSuccess("Paiement mis à jour !");
+                            renderPaymentsHistory();
+                            // Réinitialiser l'état d'édition
+                            cancelEditPayment();
+                            // Recalculer le solde si une chambre est sélectionnée
+                            if (select.value) handleRoomSelectionChange();
+                        })
+                        .catch(err => {
+                            console.error("Erreur mise à jour Firebase :", err);
+                            alert("Erreur lors de la mise à jour : " + err.message);
+                        });
+                } else {
+                    // Fallback localStorage
+                    Object.assign(paymentToUpdate, updatedData);
+                    localStorage.setItem('HOTEL_SMART_payments', JSON.stringify(window.paymentsLog));
+                    showFullscreenSuccess("Paiement mis à jour localement !");
+                    renderPaymentsHistory();
+                    cancelEditPayment();
+                    if (select.value) handleRoomSelectionChange();
+                }
+                return;
+            }
+
+            // Sinon, c'est un nouvel ajout (logique existante)
+            if(!select.value) {
+                alert("Veuillez sélectionner une chambre valide.");
+                return;
+            }
+
             const roomIndex = window.rooms.findIndex(r => r.id == select.value);
             if(roomIndex === -1) return;
 
             const targetRoom = window.rooms[roomIndex];
-            const fullPayerIdentity = `${genderSelect.value} ${payerName}`;
 
             const newPayment = {
                 date: new Date().toISOString(),
@@ -1009,12 +1183,11 @@
                 localStorage.setItem('HOTEL_SMART_payments', JSON.stringify(window.paymentsLog));
             }
 
-            // Vérifier si le paiement règle le solde et si la case est cochée
+            // Vérifier le solde et libération
             const remainingAfterPayment = globalCalculatedTotal - amountPaid;
             const shouldRelease = releaseCheckbox.checked && remainingAfterPayment <= 0;
 
             if (shouldRelease) {
-                // Libérer la chambre : passer en 'Entretien'
                 const updatedRoom = {
                     status: 'Entretien',
                     client: '',
@@ -1030,7 +1203,6 @@
                 }
                 showFullscreenSuccess("Paiement enregistré et chambre libérée !");
             } else if (remainingAfterPayment <= 0) {
-                // Solde réglé mais case non cochée : proposer la libération
                 if(confirm(`💰 Règlement du solde restant effectué par ${fullPayerIdentity} pour la chambre ${targetRoom.number}. Souhaitez-vous libérer la chambre et la basculer en 'Entretien (Ménage)' ?`)) {
                     const updatedRoom = {
                         status: 'Entretien',
@@ -1155,6 +1327,7 @@
         }
         window.showFullscreenSuccess = showFullscreenSuccess;
 
+        // --- Suppression d'un paiement ---
         function deletePayment(paymentId, roomNumber, client) {
             if (!paymentId) {
                 alert("Identifiant du paiement manquant.");
@@ -1193,6 +1366,7 @@
         }
         window.deletePayment = deletePayment;
 
+        // --- Affichage de l'historique avec bouton Modifier ---
         function renderPaymentsHistory() {
             const container = document.getElementById('payments-history-rows');
             if(window.paymentsLog.length === 0) {
@@ -1232,6 +1406,9 @@
                         <td class="p-3 text-center">
                             <div class="flex items-center justify-center gap-1">
                                 ${actionButton}
+                                <button onclick="editPayment('${p.id}')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2 rounded tracking-wide text-[10px] transition shadow-sm" title="Modifier ce paiement">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
                                 <button onclick="deletePayment('${p.id}', '${p.roomNumber}', '${p.client}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded tracking-wide text-[10px] transition shadow-sm" title="Supprimer ce paiement">
                                     <i class="fa-solid fa-trash-alt"></i>
                                 </button>
@@ -1243,6 +1420,7 @@
         }
         window.renderPaymentsHistory = renderPaymentsHistory;
 
+        // --- Gestion du réseau ---
         function updateNetworkToast(status) {
             const statusToast = document.getElementById('network-status-toast');
             if (!statusToast) return;
@@ -1267,6 +1445,7 @@
         window.addEventListener('online', () => updateNetworkToast("syncing"));
         window.addEventListener('offline', () => updateNetworkToast("offline"));
 
+        // --- Déconnexion ---
         function logout() {
             if(confirm("Quitter la session ?")) {
                 sessionStorage.removeItem('HOTEL_SMART_auth');
@@ -1274,7 +1453,7 @@
             }
         }
 
-        // PWA Installation
+        // --- PWA Installation ---
         let deferredPrompt;
         const installBtn = document.getElementById('pwa-install-btn');
 

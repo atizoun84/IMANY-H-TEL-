@@ -449,6 +449,41 @@
             font-weight: 700;
             text-transform: uppercase;
         }
+        /* Nouveau style pour la ventilation par site */
+        .site-card {
+            border-radius: 16px;
+            background: white;
+            padding: 14px 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .site-card .site-name {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: #075E54;
+        }
+        .site-card .site-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .site-card .stat-item {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 6px 10px;
+            text-align: center;
+        }
+        .site-card .stat-item .stat-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #718096;
+        }
+        .site-card .stat-item .stat-value {
+            font-size: 0.85rem;
+            font-weight: 800;
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans min-h-screen flex justify-center items-center p-0 md:p-0">
@@ -617,6 +652,16 @@
                     </div>
                 </div>
 
+                <!-- Nouvelle section : Ventilation par site hôtelier -->
+                <div class="bg-white p-3.5 rounded-2xl border border-l-4 border-l-teal-500 border-gray-200/80 shadow-sm space-y-2">
+                    <span class="text-teal-700 font-black uppercase tracking-wider text-[10px] flex items-center gap-1">
+                        <i class="fa-solid fa-hotel"></i> Ventilation des flux par site hôtelier
+                    </span>
+                    <div id="site-ventilation-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-1">
+                        <!-- Les cartes des sites seront injectées dynamiquement ici -->
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                     <div class="bg-white p-3 rounded-2xl border border-l-4 border-l-emerald-500 border-gray-200/80 shadow-sm space-y-2">
                         <span class="text-emerald-700 font-bold uppercase tracking-wider text-[10px] flex items-center gap-1">
@@ -664,6 +709,7 @@
                 </div>
             </div>
 
+            <!-- Formulaire de décaissement avec sélection du site -->
             <div class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm space-y-4 text-xs">
                 <p class="font-bold text-gray-800 border-b pb-1 flex items-center justify-between gap-1">
                     <span class="flex items-center gap-1">
@@ -695,6 +741,20 @@
                             <option value="Autre">Autre motif ou bénéficiaire d'exploitation</option>
                             <option value="Salaire">Versement Salaire Personnel</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- Nouveau champ : Sélection du site hôtelier -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-gray-700">Site hôtelier (optionnel)</label>
+                        <select id="expense-site" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                            <option value="">-- Non spécifié --</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-gray-700">Solde disponible sur ce site (CFA)</label>
+                        <span id="expense-site-balance" class="block text-sm font-black text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">0</span>
                     </div>
                 </div>
 
@@ -745,6 +805,7 @@
                                     <th class="p-3">Date</th>
                                     <th class="p-3">Type</th>
                                     <th class="p-3">Opération / Détails</th>
+                                    <th class="p-3">Site</th>
                                     <th class="p-3 text-right">Entrée (CFA)</th>
                                     <th class="p-3 text-right">Sortie (CFA)</th>
                                 </tr>
@@ -921,6 +982,29 @@
             }
         });
 
+        // Sync Sites (nouveau)
+        window.sites = [];
+        onValue(ref(db, 'sites'), (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                window.sites = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            } else {
+                window.sites = [];
+            }
+            // Mettre à jour le select des sites dans le formulaire de décaissement
+            if (typeof window.populateExpenseSiteSelect === 'function') {
+                window.populateExpenseSiteSelect();
+            }
+            // Mettre à jour l'affichage de la ventilation par site
+            if (typeof window.updateSiteVentilation === 'function') {
+                window.updateSiteVentilation();
+            }
+            // Rafraîchir le tableau général
+            if (typeof window.calculateAndRenderAccounting === 'function') {
+                window.calculateAndRenderAccounting();
+            }
+        });
+
         // Sync Rooms Data
         onValue(ref(db, 'rooms'), (snapshot) => {
             if (snapshot.exists()) {
@@ -1004,6 +1088,7 @@
         window.rooms = [];
         window.paymentsLog = [];
         window.expensesLog = [];
+        window.sites = [];
 
         // Base de données dynamique chargée depuis Firebase Cloud
         window.employeesDatabase = [];
@@ -1029,11 +1114,14 @@
             document.getElementById('audit-today-date').innerText = new Date().toLocaleDateString('fr-FR');
             document.getElementById('audit-start-date').value = today;
             document.getElementById('audit-end-date').value = today;
+            // Peupler le select des sites
+            populateExpenseSiteSelect();
         });
 
         // Global interface refresher called after Firebase synchronization tasks
         window.syncAndRefreshUI = function() {
             calculateAndRenderAccounting();
+            updateSiteVentilation();
         };
 
         window.setupEmployeeList = function() {
@@ -1051,6 +1139,46 @@
                 </option>`
             ).join('');
             syncEmployeeSalaryFields();
+        }
+
+        // Peupler le select des sites pour le formulaire de décaissement
+        window.populateExpenseSiteSelect = function() {
+            const select = document.getElementById('expense-site');
+            if (!select) return;
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- Non spécifié --</option>';
+            window.sites.forEach(site => {
+                const opt = document.createElement('option');
+                opt.value = site.id;
+                opt.textContent = site.name;
+                select.appendChild(opt);
+            });
+            if (currentVal && window.sites.some(s => s.id === currentVal)) {
+                select.value = currentVal;
+            }
+            // Mettre à jour le solde affiché
+            updateExpenseSiteBalance();
+        };
+
+        // Mettre à jour le solde disponible pour le site sélectionné
+        function updateExpenseSiteBalance() {
+            const siteId = document.getElementById('expense-site').value;
+            const balanceDisplay = document.getElementById('expense-site-balance');
+            if (!balanceDisplay) return;
+            if (!siteId) {
+                balanceDisplay.textContent = '0';
+                return;
+            }
+            // Calculer le solde du site : total des entrées (paiements) - total des sorties (dépenses) pour ce site
+            const siteEntries = window.paymentsLog
+                .filter(p => p.siteId === siteId)
+                .reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
+            const siteExpenses = window.expensesLog
+                .filter(e => e.siteId === siteId)
+                .reduce((sum, e) => sum + (parseInt(e.amount) || 0), 0);
+            const balance = siteEntries - siteExpenses;
+            balanceDisplay.textContent = balance.toLocaleString() + ' CFA';
+            balanceDisplay.className = balance >= 0 ? 'text-green-700' : 'text-red-700';
         }
 
         function updateExpenseTypeIndicator() {
@@ -1244,6 +1372,54 @@
                 alert("Erreur lors de la copie du message.");
             });
         }
+
+        // Mise à jour de la ventilation par site
+        window.updateSiteVentilation = function() {
+            const container = document.getElementById('site-ventilation-container');
+            if (!container) return;
+            
+            if (window.sites.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-4 text-gray-400 italic text-xs">Aucun site configuré.</div>`;
+                return;
+            }
+
+            let html = '';
+            window.sites.forEach(site => {
+                // Calcul des entrées (paiements) pour ce site
+                const siteIncome = window.paymentsLog
+                    .filter(p => p.siteId === site.id)
+                    .reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
+                // Calcul des sorties (dépenses) pour ce site
+                const siteExpense = window.expensesLog
+                    .filter(e => e.siteId === site.id)
+                    .reduce((sum, e) => sum + (parseInt(e.amount) || 0), 0);
+                const balance = siteIncome - siteExpense;
+
+                html += `
+                    <div class="site-card">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-hotel text-teal-600"></i>
+                            <span class="site-name">${site.name}</span>
+                        </div>
+                        <div class="site-stats">
+                            <div class="stat-item">
+                                <div class="stat-label">Entrées</div>
+                                <div class="stat-value text-emerald-600">${siteIncome.toLocaleString()} CFA</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Sorties</div>
+                                <div class="stat-value text-red-600">${siteExpense.toLocaleString()} CFA</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Solde</div>
+                                <div class="stat-value ${balance >= 0 ? 'text-blue-600' : 'text-red-700'}">${balance.toLocaleString()} CFA</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        };
 
         function calculateAndRenderAccounting() {
             let roomRevenues = 0;
@@ -1455,12 +1631,14 @@
 
             updateExpenseTypeIndicator();
             renderLedgerTable();
+            updateSiteVentilation();
         }
 
         function submitExpense() {
             const typeSelect = document.getElementById('expense-type');
             const amountInput = document.getElementById('expense-amount');
             const catSelect = document.getElementById('expense-reason-category');
+            const siteSelect = document.getElementById('expense-site');
             
             let reason = "";
             if(catSelect.value === 'Salaire') {
@@ -1472,6 +1650,7 @@
 
             const type = typeSelect.value;
             const amount = parseInt(amountInput.value) || 0;
+            const siteId = siteSelect.value || null;
 
             if (amount <= 0) {
                 alert("Le montant de la sortie doit être supérieur à 0 CFA.");
@@ -1517,13 +1696,29 @@
                 return;
             }
 
+            // Vérification du solde du site si un site est sélectionné
+            if (siteId) {
+                const siteIncome = window.paymentsLog
+                    .filter(p => p.siteId === siteId)
+                    .reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
+                const siteExpenses = window.expensesLog
+                    .filter(e => e.siteId === siteId)
+                    .reduce((sum, e) => sum + (parseInt(e.amount) || 0), 0);
+                const siteBalance = siteIncome - siteExpenses;
+                if (amount > siteBalance) {
+                    alert(`Opération refusée. Le solde disponible sur ce site est de ${siteBalance.toLocaleString()} CFA.`);
+                    return;
+                }
+            }
+
             const newExpense = {
                 id: 'exp_' + Date.now(),
                 date: new Date().toLocaleString('fr-FR'),
                 timestamp: Date.now(),
                 type: type,
                 amount: amount,
-                reason: reason
+                reason: reason,
+                siteId: siteId
             };
 
             window.expensesLog.unshift(newExpense);
@@ -1539,6 +1734,7 @@
             document.getElementById('expense-reason').value = '';
             
             calculateAndRenderAccounting();
+            updateExpenseSiteBalance();
         }
 
         function renderLedgerTable() {
@@ -1557,12 +1753,20 @@
                     ? `${p.designation || 'Revenu auxiliaire'} - ${p.client || 'N/A'}`
                     : `Chambre ${p.roomNumber || 'N/A'} - Client : ${p.client || 'N/A'}`;
                 
+                // Récupérer le nom du site
+                let siteName = 'N/A';
+                if (p.siteId) {
+                    const site = window.sites.find(s => s.id === p.siteId);
+                    if (site) siteName = site.name;
+                }
+                
                 globalItems.push({
                     id: p.id || 'pay_' + Date.now() + '_' + Math.random(),
                     date: displayDate,
                     timestamp: itemTime,
                     type: typeBadge,
                     details: details,
+                    site: siteName,
                     income: parseInt(p.amount) || 0,
                     expense: 0,
                     styleClass: isAuxiliary ? "text-amber-600 font-medium" : "text-whatsapp-teal font-medium",
@@ -1576,12 +1780,19 @@
                 if(e.type.includes('Bénéfice')) badgeColor = "bg-purple-50 text-purple-700";
                 if(e.type.includes('Capital')) badgeColor = "bg-blue-50 text-blue-700";
 
+                let siteName = 'N/A';
+                if (e.siteId) {
+                    const site = window.sites.find(s => s.id === e.siteId);
+                    if (site) siteName = site.name;
+                }
+
                 globalItems.push({
                     id: e.id || 'exp_' + Date.now() + '_' + Math.random(),
                     date: e.date,
                     timestamp: e.timestamp || Date.now(),
                     type: `<span class="${badgeColor} px-2 py-0.5 rounded font-bold uppercase text-[9px]">${e.type}</span>`,
                     details: e.reason,
+                    site: siteName,
                     income: 0,
                     expense: parseInt(e.amount) || 0,
                     styleClass: "text-red-600 font-medium",
@@ -1592,7 +1803,7 @@
             globalItems.sort((a, b) => b.timestamp - a.timestamp);
 
             if (globalItems.length === 0) {
-                container.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400 italic">Aucune transaction enregistrée dans le grand livre.</td></tr>`;
+                container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400 italic">Aucune transaction enregistrée dans le grand livre.</td></tr>`;
                 return;
             }
 
@@ -1602,6 +1813,7 @@
                     <td class="p-3 font-medium text-gray-500">${item.date}</td>
                     <td class="p-3 font-bold text-gray-900">${item.type}</td>
                     <td class="p-3 text-gray-600">${item.details}</td>
+                    <td class="p-3 text-gray-500 text-xs">${item.site}</td>
                     <td class="p-3 text-right font-black ${item.income > 0 ? 'text-whatsapp-teal' : 'text-gray-400'}">${item.income > 0 ? item.income.toLocaleString() + ' CFA' : '-'}</td>
                     <td class="p-3 text-right font-black text-red-600">${item.expense > 0 ? item.expense.toLocaleString() + ' CFA' : '-'}</td>
                 </tr>
@@ -1641,22 +1853,18 @@
                 return;
             }
 
-            // Vérification du code propriétaire
             const ownerCode = prompt("🔐 Veuillez entrer le code secret du Propriétaire pour confirmer la suppression :");
             if (ownerCode !== window.ownerSecretCode) {
                 alert("❌ Code propriétaire incorrect. Suppression annulée.");
                 return;
             }
 
-            // Filtrer les éléments à supprimer
             const remainingPayments = window.paymentsLog.filter(p => !selectedLedgerIds.has(p.id));
             const remainingExpenses = window.expensesLog.filter(e => !selectedLedgerIds.has(e.id));
 
-            // Mettre à jour les logs
             window.paymentsLog = remainingPayments;
             window.expensesLog = remainingExpenses;
 
-            // Synchroniser avec Firebase
             if (window.firebaseCloud && typeof window.firebaseCloud.syncPayments === 'function') {
                 window.firebaseCloud.syncPayments(window.paymentsLog);
             }
@@ -1664,7 +1872,6 @@
                 window.firebaseCloud.syncExpenses(window.expensesLog);
             }
 
-            // Réinitialiser la sélection
             const count = selectedLedgerIds.size;
             selectedLedgerIds.clear();
             document.getElementById('select-all-ledger').checked = false;
@@ -1677,11 +1884,9 @@
         function openAuditModal() {
             document.getElementById('auditModal').classList.remove('hidden');
             document.getElementById('auditModalBody').style.display = 'block';
-            // Réinitialiser les dates
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('audit-start-date').value = today;
             document.getElementById('audit-end-date').value = today;
-            // Afficher un message d'invitation
             document.getElementById('auditReportContainer').innerHTML = `
                 <div class="text-center py-12 text-gray-400">
                     <i class="fa-solid fa-file-circle-plus text-5xl mb-4 block"></i>
@@ -1714,7 +1919,6 @@
                 return;
             }
 
-            // Filtrer les transactions par période
             const filteredPayments = window.paymentsLog.filter(p => {
                 const pDate = p.date ? new Date(p.date) : new Date(0);
                 return pDate >= start && pDate <= end;
@@ -1725,7 +1929,6 @@
                 return eDate >= start && eDate <= end;
             });
 
-            // Calcul des totaux avec distinction Hébergement / Auxiliaire
             let hebergementIncome = 0;
             let auxiliaryIncome = 0;
             filteredPayments.forEach(p => {
@@ -1739,7 +1942,7 @@
             const totalExpense = filteredExpenses.reduce((sum, e) => sum + (parseInt(e.amount) || 0), 0);
             const netBalance = totalIncome - totalExpense;
 
-            // Calcul des dettes à recouvrer sur la période (dettes des chambres occupées)
+            // Calcul des dettes à recouvrer sur la période
             let periodDebtRooms = 0;
             let periodDebtMenu = 0;
             let periodDebtDrinks = 0;
@@ -1780,22 +1983,18 @@
                 }
             });
 
-            // Soustraire les paiements déjà effectués sur la période
             const paidRooms = filteredPayments
                 .filter(p => p.type !== 'auxiliaire')
                 .reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
             
-            // Calcul de la dette résiduelle (minimum 0)
             const totalDebt = Math.max(0, periodDebtRooms + periodDebtMenu + periodDebtDrinks - paidRooms);
 
-            // Détails par type de dépense
             const expensesByType = {};
             filteredExpenses.forEach(e => {
                 const type = e.type || 'Dépense Exploitation';
                 expensesByType[type] = (expensesByType[type] || 0) + (parseInt(e.amount) || 0);
             });
 
-            // Récupération des noms pour l'entête
             const hotelName = window.companyName || document.getElementById('header-name-display').innerText || 'HotelSmart';
             const ownerName = window.ownerName || 'Propriétaire';
 
@@ -1809,7 +2008,6 @@
                 </div>
             `;
 
-            // Tableau des transactions
             reportHTML += `
                 <table class="audit-table">
                     <thead>
@@ -1817,6 +2015,7 @@
                             <th>Date</th>
                             <th>Type</th>
                             <th>Détails</th>
+                            <th>Site</th>
                             <th style="text-align:right;">Entrée (CFA)</th>
                             <th style="text-align:right;">Sortie (CFA)</th>
                         </tr>
@@ -1824,32 +2023,47 @@
                     <tbody>
             `;
 
-            // Fusionner et trier les transactions
             const allTransactions = [
-                ...filteredPayments.map(p => ({
-                    date: p.date || new Date().toLocaleString('fr-FR'),
-                    type: p.type === 'auxiliaire' ? 'Auxiliaire' : 'Hébergement',
-                    details: p.type === 'auxiliaire' 
-                        ? `${p.designation || 'Revenu auxiliaire'} - ${p.client || 'N/A'}`
-                        : `Chambre ${p.roomNumber || 'N/A'} - Client : ${p.client || 'N/A'}`,
-                    income: parseInt(p.amount) || 0,
-                    expense: 0,
-                    timestamp: p.timestamp || Date.now()
-                })),
-                ...filteredExpenses.map(e => ({
-                    date: e.date || new Date().toLocaleString('fr-FR'),
-                    type: e.type || 'Dépense Exploitation',
-                    details: e.reason || 'N/A',
-                    income: 0,
-                    expense: parseInt(e.amount) || 0,
-                    timestamp: e.timestamp || Date.now()
-                }))
+                ...filteredPayments.map(p => {
+                    let siteName = 'N/A';
+                    if (p.siteId) {
+                        const site = window.sites.find(s => s.id === p.siteId);
+                        if (site) siteName = site.name;
+                    }
+                    return {
+                        date: p.date || new Date().toLocaleString('fr-FR'),
+                        type: p.type === 'auxiliaire' ? 'Auxiliaire' : 'Hébergement',
+                        details: p.type === 'auxiliaire' 
+                            ? `${p.designation || 'Revenu auxiliaire'} - ${p.client || 'N/A'}`
+                            : `Chambre ${p.roomNumber || 'N/A'} - Client : ${p.client || 'N/A'}`,
+                        site: siteName,
+                        income: parseInt(p.amount) || 0,
+                        expense: 0,
+                        timestamp: p.timestamp || Date.now()
+                    };
+                }),
+                ...filteredExpenses.map(e => {
+                    let siteName = 'N/A';
+                    if (e.siteId) {
+                        const site = window.sites.find(s => s.id === e.siteId);
+                        if (site) siteName = site.name;
+                    }
+                    return {
+                        date: e.date || new Date().toLocaleString('fr-FR'),
+                        type: e.type || 'Dépense Exploitation',
+                        details: e.reason || 'N/A',
+                        site: siteName,
+                        income: 0,
+                        expense: parseInt(e.amount) || 0,
+                        timestamp: e.timestamp || Date.now()
+                    };
+                })
             ];
 
             allTransactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
             if (allTransactions.length === 0) {
-                reportHTML += `<tr><td colspan="5" style="text-align:center; padding:20px; color:#a0aec0;">Aucune transaction pour la période sélectionnée.</td></tr>`;
+                reportHTML += `<tr><td colspan="6" style="text-align:center; padding:20px; color:#a0aec0;">Aucune transaction pour la période sélectionnée.</td></tr>`;
             } else {
                 allTransactions.forEach(t => {
                     const incomeColor = t.type === 'Auxiliaire' ? '#d97706' : '#128C7E';
@@ -1858,6 +2072,7 @@
                             <td>${t.date}</td>
                             <td><strong>${t.type}</strong></td>
                             <td>${t.details}</td>
+                            <td>${t.site}</td>
                             <td style="text-align:right; font-weight:700; color:${incomeColor};">${t.income > 0 ? t.income.toLocaleString() + ' CFA' : '-'}</td>
                             <td style="text-align:right; font-weight:700; color:#e53e3e;">${t.expense > 0 ? t.expense.toLocaleString() + ' CFA' : '-'}</td>
                         </tr>
@@ -1870,7 +2085,6 @@
                 </table>
             `;
 
-            // Récapitulatif d'audit avec distinction Hébergement / Auxiliaire
             reportHTML += `
                 <div class="audit-summary">
                     <div class="summary-item" style="border-left-color: #128C7E;">
@@ -1896,7 +2110,6 @@
                 </div>
             `;
 
-            // Détail des dépenses par catégorie
             if (Object.keys(expensesByType).length > 0) {
                 reportHTML += `
                     <div style="margin-top:16px; background:#f7fafc; border-radius:12px; padding:14px 18px; border:1px solid #e2e8f0;">
@@ -1917,7 +2130,6 @@
                 `;
             }
 
-            // Signatures
             reportHTML += `
                 <div class="audit-signatures">
                     <div class="sig-block">
@@ -1938,7 +2150,6 @@
                 </div>
             `;
 
-            // Mettre à jour l'affichage dans la modale
             document.getElementById('auditReportContainer').innerHTML = reportHTML;
 
             // Préparer également le contenu pour l'impression dans la zone printArea
@@ -1963,6 +2174,7 @@
                             <th>Date</th>
                             <th>Type</th>
                             <th>Détails</th>
+                            <th>Site</th>
                             <th style="text-align:right;">Entrée (CFA)</th>
                             <th style="text-align:right;">Sortie (CFA)</th>
                         </tr>
@@ -1970,7 +2182,7 @@
                     <tbody>
             `;
             if (allTransactions.length === 0) {
-                printArea.innerHTML += `<tr><td colspan="5" style="text-align:center; padding:20px; color:#a0aec0;">Aucune transaction pour la période sélectionnée.</td></tr>`;
+                printArea.innerHTML += `<tr><td colspan="6" style="text-align:center; padding:20px; color:#a0aec0;">Aucune transaction pour la période sélectionnée.</td></tr>`;
             } else {
                 allTransactions.forEach(t => {
                     const incomeColor = t.type === 'Auxiliaire' ? '#d97706' : '#128C7E';
@@ -1979,6 +2191,7 @@
                             <td>${t.date}</td>
                             <td><strong>${t.type}</strong></td>
                             <td>${t.details}</td>
+                            <td>${t.site}</td>
                             <td style="text-align:right; font-weight:700; color:${incomeColor};">${t.income > 0 ? t.income.toLocaleString() + ' CFA' : '-'}</td>
                             <td style="text-align:right; font-weight:700; color:#e53e3e;">${t.expense > 0 ? t.expense.toLocaleString() + ' CFA' : '-'}</td>
                         </tr>
@@ -2051,7 +2264,6 @@
             `;
         }
 
-        // Fonction d'impression professionnelle avec délai de sécurité
         function printAuditReport() {
             const printArea = document.getElementById('printArea');
             if (!printArea || printArea.innerHTML.trim() === '') {
@@ -2127,6 +2339,9 @@
                 closeAuditModal();
             }
         });
+
+        // Écouter les changements du select des sites pour mettre à jour le solde affiché
+        document.getElementById('expense-site').addEventListener('change', updateExpenseSiteBalance);
     </script>
 </body>
 </html>

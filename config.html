@@ -241,6 +241,7 @@
                 </div>
             </div>
 
+            <!-- SECTION GESTION DES CHAMBRES AVEC SITE ET MODIFICATION -->
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
                 <div class="flex justify-between items-center">
                     <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider text-whatsapp-dark flex items-center gap-2">
@@ -248,7 +249,7 @@
                     </h3>
                     <button type="button" onclick="toggleContainer('rooms-table-container', this)" class="text-xs text-whatsapp-teal font-semibold bg-gray-50 px-3 py-1 rounded-full border border-gray-200">Voir la liste</button>
                 </div>
-                <div id="room-form" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                <div id="room-form" class="grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs">
                     <div>
                         <label class="block font-semibold text-gray-700 mb-1">Numéro de chambre</label>
                         <input type="text" id="room-number" placeholder="Ex: 101" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
@@ -263,10 +264,17 @@
                     </div>
                     <div>
                         <label class="block font-semibold text-gray-700 mb-1">Description</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="room-desc" placeholder="Ex: Vue sur mer, Lit King Size..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
-                            <button onclick="addRoom()" class="bg-whatsapp-teal text-white font-bold px-4 rounded-xl shadow hover:bg-whatsapp-dark transition" disabled>AJOUTER</button>
-                        </div>
+                        <input type="text" id="room-desc" placeholder="Ex: Vue sur mer..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Site hôtelier</label>
+                        <select id="room-site" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                            <option value="">Aucun</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-5 flex justify-end gap-2">
+                        <button id="room-submit-btn" onclick="handleRoomSubmit()" class="bg-whatsapp-teal text-white font-bold px-6 py-2 rounded-xl shadow hover:bg-whatsapp-dark transition" disabled>AJOUTER</button>
+                        <button id="room-cancel-btn" onclick="cancelEditRoom()" class="bg-gray-400 text-white font-bold px-6 py-2 rounded-xl shadow hover:bg-gray-500 transition hidden" disabled>Annuler</button>
                     </div>
                 </div>
                 <div id="rooms-table-container" class="hidden overflow-x-auto pt-2 border-t border-gray-100">
@@ -276,8 +284,9 @@
                                 <th class="p-2">N°</th>
                                 <th class="p-2">Type</th>
                                 <th class="p-2">Prix / Nuit</th>
+                                <th class="p-2">Site</th>
                                 <th class="p-2">Description</th>
-                                <th class="p-2 text-center">Action</th>
+                                <th class="p-2 text-center" colspan="2">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="rooms-list" class="divide-y divide-gray-100 text-gray-700"></tbody>
@@ -359,6 +368,56 @@
                             </tr>
                         </thead>
                         <tbody id="menus-list" class="divide-y divide-gray-100 text-gray-700"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Nouvelle section : Gestion des Sites Hôteliers (Plaquettes) -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider text-whatsapp-dark flex items-center gap-2">
+                        <i class="fa-solid fa-hotel text-whatsapp-teal"></i> Gestion des Sites Hôteliers
+                    </h3>
+                    <button type="button" onclick="toggleContainer('sites-table-container', this)" class="text-xs text-whatsapp-teal font-semibold bg-gray-50 px-3 py-1 rounded-full border border-gray-200">Voir la liste</button>
+                </div>
+                <div id="site-form" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Nom du site</label>
+                        <input type="text" id="site-name" placeholder="Ex: Résidence Plage" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Adresse</label>
+                        <input type="text" id="site-address" placeholder="Adresse complète" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Téléphone</label>
+                        <input type="tel" id="site-phone" placeholder="+229 ..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-gray-700 mb-1">Email</label>
+                        <input type="email" id="site-email" placeholder="site@exemple.com" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                    </div>
+                    <div class="sm:col-span-4 flex items-end gap-2">
+                        <div class="flex-1">
+                            <label class="block font-semibold text-gray-700 mb-1">Description</label>
+                            <input type="text" id="site-desc" placeholder="Infos complémentaires" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-800 focus:outline-none focus:border-whatsapp-teal" disabled>
+                        </div>
+                        <button onclick="addSite()" class="bg-whatsapp-teal text-white font-bold px-6 py-2 rounded-xl shadow hover:bg-whatsapp-dark transition whitespace-nowrap" disabled>AJOUTER</button>
+                    </div>
+                </div>
+                <div id="sites-table-container" class="hidden overflow-x-auto pt-2 border-t border-gray-100">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-500 uppercase text-[10px]">
+                                <th class="p-2">Nom</th>
+                                <th class="p-2">Adresse</th>
+                                <th class="p-2">Téléphone</th>
+                                <th class="p-2">Email</th>
+                                <th class="p-2">Description</th>
+                                <th class="p-2 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sites-list" class="divide-y divide-gray-100 text-gray-700"></tbody>
                     </table>
                 </div>
             </div>
@@ -503,7 +562,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, push, remove, get } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, push, remove, get, update } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCmlcMYeoeo4ESVWgzTC2zdq4lheqwbOyc",
@@ -525,7 +584,9 @@
         window.rooms = [];
         window.drinks = [];
         window.menus = [];
+        window.sites = [];
         window.primeCounter = 1;
+        window.editingRoomId = null; // stocke l'ID de la chambre en cours d'édition
 
         const openMenuBtn = document.getElementById('openMenuBtn');
         const closeMenuBtn = document.getElementById('closeMenuBtn');
@@ -648,6 +709,14 @@
                 const data = snapshot.val();
                 window.menus = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
                 window.renderMenus();
+            });
+
+            // Écouteur pour les sites (pour le select des chambres)
+            onValue(ref(db, 'sites'), (snapshot) => {
+                const data = snapshot.val();
+                window.sites = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+                window.renderSites();
+                window.populateRoomSiteSelect(); // Met à jour le select
             });
 
             onValue(ref(db, 'company_data'), (snapshot) => {
@@ -840,10 +909,36 @@
                 remove(ref(db, `employees/${id}`))
                     .then(() => {
                         window.showSuccessMessage("Employé supprimé !");
-                        // Ne pas recharger la page, les données seront mises à jour automatiquement via onValue
                     })
                     .catch(err => alert("Erreur : " + err.message));
             } else { alert("Code incorrect."); }
+        }
+
+        // === GESTION DES CHAMBRES AVEC SITE ET MODIFICATION ===
+        window.populateRoomSiteSelect = function() {
+            const select = document.getElementById('room-site');
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Aucun</option>';
+            window.sites.forEach(site => {
+                const opt = document.createElement('option');
+                opt.value = site.id;
+                opt.textContent = site.name;
+                select.appendChild(opt);
+            });
+            // Rétablir la valeur sélectionnée si elle existe toujours
+            if (currentValue) {
+                const exists = window.sites.some(s => s.id === currentValue);
+                if (exists) select.value = currentValue;
+                else select.value = "";
+            }
+        }
+
+        window.handleRoomSubmit = function() {
+            if (window.editingRoomId) {
+                window.updateRoom();
+            } else {
+                window.addRoom();
+            }
         }
 
         window.addRoom = function() {
@@ -851,30 +946,115 @@
             const type = document.getElementById('room-type').value;
             const price = document.getElementById('room-price').value;
             const desc = document.getElementById('room-desc').value;
+            const siteId = document.getElementById('room-site').value;
             if(!number || !type || !price) { alert("Les champs Numéro, Type et Prix sont requis."); return; }
             
             const newRoomRef = push(ref(db, 'rooms'));
-            set(newRoomRef, { number, type, price: parseFloat(price), desc: desc || "Aucune" })
+            set(newRoomRef, { 
+                number, 
+                type, 
+                price: parseFloat(price), 
+                desc: desc || "Aucune",
+                siteId: siteId || null
+            })
                 .then(() => {
+                    // Réinitialiser le formulaire
                     document.getElementById('room-number').value = "";
                     document.getElementById('room-type').value = "";
                     document.getElementById('room-price').value = "";
                     document.getElementById('room-desc').value = "";
+                    document.getElementById('room-site').value = "";
                     window.showSuccessMessage("Chambre ajoutée !");
                 }).catch(err => alert("Erreur : " + err.message));
         }
 
+        window.updateRoom = function() {
+            const id = window.editingRoomId;
+            if (!id) return;
+            const number = document.getElementById('room-number').value;
+            const type = document.getElementById('room-type').value;
+            const price = document.getElementById('room-price').value;
+            const desc = document.getElementById('room-desc').value;
+            const siteId = document.getElementById('room-site').value;
+            if(!number || !type || !price) { alert("Les champs Numéro, Type et Prix sont requis."); return; }
+
+            update(ref(db, `rooms/${id}`), {
+                number,
+                type,
+                price: parseFloat(price),
+                desc: desc || "Aucune",
+                siteId: siteId || null
+            })
+                .then(() => {
+                    window.cancelEditRoom(); // réinitialise le formulaire
+                    window.showSuccessMessage("Chambre mise à jour !");
+                })
+                .catch(err => alert("Erreur : " + err.message));
+        }
+
+        window.editRoom = function(id) {
+            const room = window.rooms.find(r => r.id === id);
+            if (!room) return;
+            // Remplir le formulaire
+            document.getElementById('room-number').value = room.number || "";
+            document.getElementById('room-type').value = room.type || "";
+            document.getElementById('room-price').value = room.price || "";
+            document.getElementById('room-desc').value = room.desc || "";
+            document.getElementById('room-site').value = room.siteId || "";
+            // Changer le bouton
+            const submitBtn = document.getElementById('room-submit-btn');
+            submitBtn.textContent = "METTRE À JOUR";
+            submitBtn.classList.remove('bg-whatsapp-teal');
+            submitBtn.classList.add('bg-blue-600');
+            // Afficher le bouton Annuler
+            document.getElementById('room-cancel-btn').classList.remove('hidden');
+            // Stocker l'ID
+            window.editingRoomId = id;
+        }
+
+        window.cancelEditRoom = function() {
+            // Réinitialiser le formulaire
+            document.getElementById('room-number').value = "";
+            document.getElementById('room-type').value = "";
+            document.getElementById('room-price').value = "";
+            document.getElementById('room-desc').value = "";
+            document.getElementById('room-site').value = "";
+            // Remettre le bouton
+            const submitBtn = document.getElementById('room-submit-btn');
+            submitBtn.textContent = "AJOUTER";
+            submitBtn.classList.remove('bg-blue-600');
+            submitBtn.classList.add('bg-whatsapp-teal');
+            // Cacher le bouton Annuler
+            document.getElementById('room-cancel-btn').classList.add('hidden');
+            // Réinitialiser l'ID
+            window.editingRoomId = null;
+        }
+
         window.renderRooms = function() {
             const tbody = document.getElementById('rooms-list');
-            tbody.innerHTML = window.rooms.map(r => `
+            tbody.innerHTML = window.rooms.map(r => {
+                // Trouver le nom du site à partir de l'ID
+                const site = window.sites.find(s => s.id === r.siteId);
+                const siteName = site ? site.name : (r.siteId ? "ID inconnu" : "Aucun");
+                return `
                 <tr class="hover:bg-gray-50/50">
                     <td class="p-2 font-bold">${r.number}</td>
                     <td class="p-2">${r.type}</td>
                     <td class="p-2 font-semibold text-whatsapp-teal">${r.price} CFA</td>
+                    <td class="p-2">${siteName}</td>
                     <td class="p-2 text-gray-500 italic">${r.desc || 'Aucune'}</td>
-                    <td class="p-2 text-center"><button class="text-red-500 action-btn-del" onclick="confirmDeleteRoom('${r.id}')" disabled><i class="fas fa-trash-alt"></i></button></td>
+                    <td class="p-2 text-center">
+                        <button class="text-blue-500 action-btn-edit" onclick="editRoom('${r.id}')" disabled>
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                    <td class="p-2 text-center">
+                        <button class="text-red-500 action-btn-del" onclick="confirmDeleteRoom('${r.id}')" disabled>
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         window.confirmDeleteRoom = function(id) {
@@ -883,7 +1063,8 @@
                 remove(ref(db, `rooms/${id}`))
                     .then(() => {
                         window.showSuccessMessage("Chambre supprimée !");
-                        // Ne pas recharger la page, les données seront mises à jour automatiquement via onValue
+                        // Si on supprime la chambre en cours d'édition, annuler l'édition
+                        if (window.editingRoomId === id) window.cancelEditRoom();
                     })
                     .catch(err => alert("Erreur : " + err.message));
             } else { alert("Code incorrect."); }
@@ -923,7 +1104,6 @@
                 remove(ref(db, `drinks/${id}`))
                     .then(() => {
                         window.showSuccessMessage("Boisson supprimée !");
-                        // Ne pas recharger la page, les données seront mises à jour automatiquement via onValue
                     })
                     .catch(err => alert("Erreur : " + err.message));
             } else { alert("Code incorrect."); }
@@ -963,7 +1143,52 @@
                 remove(ref(db, `menus/${id}`))
                     .then(() => {
                         window.showSuccessMessage("Menu supprimé !");
-                        // Ne pas recharger la page, les données seront mises à jour automatiquement via onValue
+                    })
+                    .catch(err => alert("Erreur : " + err.message));
+            } else { alert("Code incorrect."); }
+        }
+
+        // Fonctions pour la gestion des sites
+        window.addSite = function() {
+            const name = document.getElementById('site-name').value;
+            const address = document.getElementById('site-address').value;
+            const phone = document.getElementById('site-phone').value;
+            const email = document.getElementById('site-email').value;
+            const desc = document.getElementById('site-desc').value;
+            if(!name || !address || !phone || !email) { alert("Les champs Nom, Adresse, Téléphone et Email sont requis."); return; }
+            
+            const newSiteRef = push(ref(db, 'sites'));
+            set(newSiteRef, { name, address, phone, email, desc: desc || "Aucune" })
+                .then(() => {
+                    document.getElementById('site-name').value = "";
+                    document.getElementById('site-address').value = "";
+                    document.getElementById('site-phone').value = "";
+                    document.getElementById('site-email').value = "";
+                    document.getElementById('site-desc').value = "";
+                    window.showSuccessMessage("Site ajouté !");
+                }).catch(err => alert("Erreur : " + err.message));
+        }
+
+        window.renderSites = function() {
+            const tbody = document.getElementById('sites-list');
+            tbody.innerHTML = window.sites.map(s => `
+                <tr class="hover:bg-gray-50/50">
+                    <td class="p-2 font-bold">${s.name}</td>
+                    <td class="p-2">${s.address}</td>
+                    <td class="p-2">${s.phone}</td>
+                    <td class="p-2">${s.email}</td>
+                    <td class="p-2 text-gray-500 italic">${s.desc || 'Aucune'}</td>
+                    <td class="p-2 text-center"><button class="text-red-500 action-btn-del" onclick="confirmDeleteSite('${s.id}')" disabled><i class="fas fa-trash-alt"></i></button></td>
+                </tr>
+            `).join('');
+        }
+
+        window.confirmDeleteSite = function(id) {
+            const code = prompt("Entrez le code du Gérant ou du Propriétaire :");
+            if(String(code) === String(window.userSecurityCode) || String(code) === String(window.ownerSecretCode)) {
+                remove(ref(db, `sites/${id}`))
+                    .then(() => {
+                        window.showSuccessMessage("Site supprimé !");
                     })
                     .catch(err => alert("Erreur : " + err.message));
             } else { alert("Code incorrect."); }
@@ -984,7 +1209,7 @@
             try {
                 window.showSuccessMessage("Extraction des données en cours...");
                 
-                const nodesToExport = ['rooms', 'drinks', 'menus', 'employees', 'company_data'];
+                const nodesToExport = ['rooms', 'drinks', 'menus', 'employees', 'company_data', 'sites'];
                 let csvContent = "\uFEFF"; // BOM pour assurer le support des accents sous Excel
                 
                 for (const node of nodesToExport) {
@@ -1076,13 +1301,13 @@
         }
 
         window.lockAllFields = function() {
-            document.querySelectorAll('main input, main textarea, main select, main button:not(.action-btn-del)').forEach(el => {
+            document.querySelectorAll('main input, main textarea, main select, main button:not(.action-btn-del):not(.action-btn-edit)').forEach(el => {
                 if(el.id !== "unlock-trigger-btn" && el.id !== "save-settings-btn" && el.id !== "force-sync-btn" && el.id !== "clear-cloud-btn") {
                     el.disabled = true;
                     if(el.tagName !== 'BUTTON') el.classList.add('info-locked');
                 }
             });
-            document.querySelectorAll('.action-btn-del').forEach(b => b.disabled = true);
+            document.querySelectorAll('.action-btn-del, .action-btn-edit').forEach(b => b.disabled = true);
             document.getElementById('lock-action-area').innerHTML = `
                 <button id="unlock-trigger-btn" onclick="unlockProcess()" class="bg-red-600 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition transform active:scale-95 flex items-center gap-1">
                     <i class="fas fa-unlock"></i> DÉVERROUILLER
@@ -1097,7 +1322,7 @@
                     el.disabled = false; 
                     el.classList.remove('info-locked');
                 });
-                document.querySelectorAll('.action-btn-del').forEach(b => b.disabled = false);
+                document.querySelectorAll('.action-btn-del, .action-btn-edit').forEach(b => b.disabled = false);
                 document.getElementById('lock-action-area').innerHTML = `
                     <button onclick="saveAndLock()" class="bg-gradient-to-r from-[#128C7E] to-[#25D366] text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition transform active:scale-95 flex items-center gap-1">
                         <i class="fas fa-save"></i> SAUVEGARDER & VERROUILLER
@@ -1118,6 +1343,9 @@
         document.getElementById('force-sync-btn').addEventListener('click', () => {
             window.showSuccessMessage("Synchronisation forcée réussie !");
         });
+
+        // Gestion du bouton Annuler
+        document.getElementById('room-cancel-btn').addEventListener('click', window.cancelEditRoom);
     </script>
 </body>
 </html>
