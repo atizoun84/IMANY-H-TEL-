@@ -442,6 +442,7 @@
                                     <th class="p-3">Date & Heure</th>
                                     <th class="p-3">Type</th>
                                     <th class="p-3">Référence</th>
+                                    <th class="p-3">Site</th>
                                     <th class="p-3">Client/Payeur</th>
                                     <th class="p-3">Mode</th>
                                     <th class="p-3 text-right">Montant</th>
@@ -599,7 +600,7 @@
             window.configuredMenus = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
         });
 
-        // Écouteur pour les sites (ajouté)
+        // Écouteur pour les sites
         window.sites = [];
         onValue(ref(db, 'sites'), (snapshot) => {
             const data = snapshot.val();
@@ -610,6 +611,8 @@
             if (document.getElementById('payment-room-select').value) {
                 window.handleRoomSelectionChange();
             }
+            // Rafraîchir l'historique pour mettre à jour les noms des sites
+            window.renderPaymentsHistory();
         });
 
         onValue(window.FirebaseBridge.roomsRef, (snapshot) => {
@@ -1025,7 +1028,6 @@
                 }
             } else {
                 // Pour les auxiliaires, on ne peut pas modifier la chambre, on garde la sélection actuelle
-                // On affiche juste un message
                 if (payment.type === 'auxiliaire') {
                     alert("Modification d'un paiement auxiliaire : seul le montant, le payeur et le mode sont modifiables.");
                 }
@@ -1101,12 +1103,13 @@
                     date: paymentToUpdate.date // on conserve la date d'origine
                 };
 
-                // Pour les paiements hébergement, on peut aussi mettre à jour la chambre si elle a changé
+                // Pour les paiements hébergement, on peut aussi mettre à jour la chambre et le siteId
                 if (paymentToUpdate.type === 'hebergement' && select.value) {
                     const room = window.rooms.find(r => r.id == select.value);
                     if (room) {
                         updatedData.roomNumber = room.number;
                         updatedData.client = room.client;
+                        updatedData.siteId = room.siteId; // mettre à jour le siteId
                     }
                 }
 
@@ -1160,7 +1163,8 @@
                 method: methodSelect.value,
                 amount: amountPaid,
                 type: 'hebergement',
-                designation: `Séjour Chambre ${targetRoom.number}`
+                designation: `Séjour Chambre ${targetRoom.number}`,
+                siteId: targetRoom.siteId || null  // <-- Ajout du siteId pour la comptabilité
             };
 
             window.paymentsLog.unshift({
@@ -1282,7 +1286,8 @@
                 method: method,
                 amount: amount,
                 type: 'auxiliaire',
-                designation: designation
+                designation: designation,
+                siteId: null // pas de site pour les auxiliaires
             };
 
             window.paymentsLog.unshift({
@@ -1366,11 +1371,11 @@
         }
         window.deletePayment = deletePayment;
 
-        // --- Affichage de l'historique avec bouton Modifier ---
+        // --- Affichage de l'historique avec bouton Modifier et colonne Site ---
         function renderPaymentsHistory() {
             const container = document.getElementById('payments-history-rows');
             if(window.paymentsLog.length === 0) {
-                container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400 italic">Aucun flux financier enregistré aujourd'hui.</td></tr>`;
+                container.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-400 italic">Aucun flux financier enregistré aujourd'hui.</td></tr>`;
                 return;
             }
 
@@ -1387,6 +1392,20 @@
 
                 const displayClient = p.payer ? `${p.client}` : p.client;
                 
+                // Récupération du nom du site : d'abord via siteId, sinon via la chambre
+                let siteName = 'Aucun';
+                if (p.siteId) {
+                    const site = window.sites.find(s => s.id === p.siteId);
+                    if (site) siteName = site.name;
+                } else if (p.roomNumber && p.roomNumber !== 'Auxiliaire') {
+                    // Essayer de récupérer le site via la chambre associée
+                    const room = window.rooms.find(r => r.number === p.roomNumber);
+                    if (room && room.siteId) {
+                        const site = window.sites.find(s => s.id === room.siteId);
+                        if (site) siteName = site.name;
+                    }
+                }
+
                 let actionButton = '';
                 if (!isAuxiliary) {
                     const remaining = calculateRemainingForRoom(p.roomNumber, p.client, null);
@@ -1400,6 +1419,7 @@
                         <td class="p-3 font-medium text-gray-500 text-[10px]">${displayDate}</td>
                         <td class="p-3">${typeBadge}</td>
                         <td class="p-3 font-bold text-gray-800">${reference}</td>
+                        <td class="p-3 text-xs font-medium text-gray-700">${siteName}</td>
                         <td class="p-3 text-xs">${displayClient}</td>
                         <td class="p-3"><span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase">${p.method}</span></td>
                         <td class="p-3 text-right font-black ${isAuxiliary ? 'text-amber-600' : 'text-whatsapp-teal'}">${parseInt(p.amount).toLocaleString()} CFA</td>

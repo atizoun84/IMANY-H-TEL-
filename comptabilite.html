@@ -709,7 +709,7 @@
                 </div>
             </div>
 
-            <!-- Formulaire de décaissement avec sélection du site -->
+            <!-- Formulaire de décaissement avec sélection du site et de la date -->
             <div class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm space-y-4 text-xs">
                 <p class="font-bold text-gray-800 border-b pb-1 flex items-center justify-between gap-1">
                     <span class="flex items-center gap-1">
@@ -744,8 +744,8 @@
                     </div>
                 </div>
 
-                <!-- Nouveau champ : Sélection du site hôtelier -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Nouvelle ligne : Sélection du site hôtelier et date de l'opération -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div class="space-y-1.5">
                         <label class="block font-bold text-gray-700">Site hôtelier (optionnel)</label>
                         <select id="expense-site" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
@@ -755,6 +755,10 @@
                     <div class="space-y-1.5">
                         <label class="block font-bold text-gray-700">Solde disponible sur ce site (CFA)</label>
                         <span id="expense-site-balance" class="block text-sm font-black text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">0</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-gray-700">Date de l'opération</label>
+                        <input type="date" id="expense-date" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
                     </div>
                 </div>
 
@@ -865,7 +869,7 @@
     <!-- Firebase Realtime Database Integration Layer -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCmlcMYeoeo4ESVWgzTC2zdq4lheqwbOyc",
@@ -982,7 +986,7 @@
             }
         });
 
-        // Sync Sites (nouveau)
+        // Sync Sites
         window.sites = [];
         onValue(ref(db, 'sites'), (snapshot) => {
             if (snapshot.exists()) {
@@ -1006,41 +1010,79 @@
         });
 
         // Sync Rooms Data
+        window.rooms = [];
         onValue(ref(db, 'rooms'), (snapshot) => {
             if (snapshot.exists()) {
                 const data = snapshot.val();
-                window.rooms = Object.keys(data).map(key => ({ id: key, ...data[key] }));
-                if (typeof window.syncAndRefreshUI === 'function') window.syncAndRefreshUI();
+                window.rooms = Object.keys(data).map(key => {
+                    const room = data[key];
+                    // S'assurer que les champs nécessaires existent
+                    return {
+                        id: key,
+                        number: room.number || '',
+                        status: room.status || 'Disponible',
+                        client: room.client || '',
+                        price: room.price || 0,
+                        arrivalDate: room.arrivalDate || '',
+                        arrivalTime: room.arrivalTime || '12:00',
+                        mealsDetails: room.mealsDetails || { pdej: { menu: '', price: '' }, dej: { menu: '', price: '' }, din: { menu: '', price: '' } },
+                        drinks: room.drinks || [],
+                        siteId: room.siteId || null,
+                        ...room
+                    };
+                });
             } else {
                 window.rooms = [];
-                if (typeof window.syncAndRefreshUI === 'function') window.syncAndRefreshUI();
+            }
+            if (typeof window.calculateAndRenderAccounting === 'function') {
+                window.calculateAndRenderAccounting();
+            }
+            if (typeof window.updateSiteVentilation === 'function') {
+                window.updateSiteVentilation();
             }
         });
 
         // Sync Payments Log (Nœud 'payments' unifié pour l'historique d'encaissement global)
+        window.paymentsLog = [];
         onValue(ref(db, 'payments'), (snapshot) => {
             if (snapshot.exists()) {
                 const data = snapshot.val();
                 window.paymentsLog = Object.keys(data).map(key => ({ id: key, ...data[key] }));
-                if (typeof window.syncAndRefreshUI === 'function') window.syncAndRefreshUI();
             } else {
                 window.paymentsLog = [];
-                if (typeof window.syncAndRefreshUI === 'function') window.syncAndRefreshUI();
+            }
+            if (typeof window.calculateAndRenderAccounting === 'function') {
+                window.calculateAndRenderAccounting();
+            }
+            if (typeof window.updateSiteVentilation === 'function') {
+                window.updateSiteVentilation();
             }
         });
 
         // Sync Expenses Log
+        window.expensesLog = [];
         onValue(ref(db, 'HOTEL_SMART_expenses'), (snapshot) => {
             if (snapshot.exists()) {
-                window.expensesLog = snapshot.val();
-                if (typeof window.syncAndRefreshUI === 'function') window.syncAndRefreshUI();
+                const data = snapshot.val();
+                // Si c'est un tableau, on le prend tel quel, sinon on le transforme
+                if (Array.isArray(data)) {
+                    window.expensesLog = data;
+                } else {
+                    window.expensesLog = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                }
             } else {
                 window.expensesLog = [];
-                if (typeof window.syncAndRefreshUI === 'function') window.syncAndRefreshUI();
+            }
+            if (typeof window.calculateAndRenderAccounting === 'function') {
+                window.calculateAndRenderAccounting();
+            }
+            if (typeof window.updateSiteVentilation === 'function') {
+                window.updateSiteVentilation();
             }
         });
 
-        // Sync Real-Time Employees database structure mapping to payroll layout
+        // Sync Employees for salary dropdown
+        window.employeesDatabase = [];
         onValue(ref(db, 'employees'), (snapshot) => {
             if (snapshot.exists()) {
                 const data = snapshot.val();
@@ -1051,6 +1093,29 @@
                     salaryDue: Math.round(data[key].net || data[key].brut || 0)
                 }));
                 if (typeof window.setupEmployeeList === 'function') window.setupEmployeeList();
+            } else {
+                window.employeesDatabase = [];
+                if (typeof window.setupEmployeeList === 'function') window.setupEmployeeList();
+            }
+        });
+
+        // Sync Drinks, Menus pour les calculs éventuels (non utilisés directement ici mais peut être utile)
+        window.configuredDrinks = [];
+        onValue(ref(db, 'drinks'), (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                window.configuredDrinks = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            } else {
+                window.configuredDrinks = [];
+            }
+        });
+        window.configuredMenus = [];
+        onValue(ref(db, 'menus'), (snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                window.configuredMenus = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            } else {
+                window.configuredMenus = [];
             }
         });
     </script>
@@ -1107,15 +1172,23 @@
         let selectedLedgerIds = new Set();
 
         document.addEventListener('DOMContentLoaded', function() {
-            calculateAndRenderAccounting();
-            updateExpenseTypeIndicator();
             // Initialisation des dates pour l'audit
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('audit-today-date').innerText = new Date().toLocaleDateString('fr-FR');
             document.getElementById('audit-start-date').value = today;
             document.getElementById('audit-end-date').value = today;
+            
+            // Initialisation de la date du décaissement à aujourd'hui
+            const expenseDateInput = document.getElementById('expense-date');
+            if (expenseDateInput) {
+                expenseDateInput.value = today;
+            }
+            
             // Peupler le select des sites
             populateExpenseSiteSelect();
+            // Appel initial pour le calcul, les données viendront des écouteurs
+            calculateAndRenderAccounting();
+            updateExpenseTypeIndicator();
         });
 
         // Global interface refresher called after Firebase synchronization tasks
@@ -1171,7 +1244,15 @@
             }
             // Calculer le solde du site : total des entrées (paiements) - total des sorties (dépenses) pour ce site
             const siteEntries = window.paymentsLog
-                .filter(p => p.siteId === siteId)
+                .filter(p => {
+                    // Utiliser le siteId du paiement, ou celui de la chambre associée
+                    let effectiveSiteId = p.siteId;
+                    if (!effectiveSiteId && p.roomNumber && p.roomNumber !== 'Auxiliaire') {
+                        const room = window.rooms.find(r => r.number === p.roomNumber);
+                        if (room) effectiveSiteId = room.siteId;
+                    }
+                    return effectiveSiteId === siteId;
+                })
                 .reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
             const siteExpenses = window.expensesLog
                 .filter(e => e.siteId === siteId)
@@ -1373,7 +1454,7 @@
             });
         }
 
-        // Mise à jour de la ventilation par site
+        // --- Mise à jour de la ventilation par site avec fallback sur la chambre ---
         window.updateSiteVentilation = function() {
             const container = document.getElementById('site-ventilation-container');
             if (!container) return;
@@ -1385,14 +1466,24 @@
 
             let html = '';
             window.sites.forEach(site => {
-                // Calcul des entrées (paiements) pour ce site
+                // Calcul des entrées (paiements) pour ce site avec fallback sur la chambre
                 const siteIncome = window.paymentsLog
-                    .filter(p => p.siteId === site.id)
+                    .filter(p => {
+                        let effectiveSiteId = p.siteId;
+                        // Si le paiement n'a pas de siteId, essayer de le récupérer via la chambre
+                        if (!effectiveSiteId && p.roomNumber && p.roomNumber !== 'Auxiliaire') {
+                            const room = window.rooms.find(r => r.number === p.roomNumber);
+                            if (room) effectiveSiteId = room.siteId;
+                        }
+                        return effectiveSiteId === site.id;
+                    })
                     .reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
+
                 // Calcul des sorties (dépenses) pour ce site
                 const siteExpense = window.expensesLog
                     .filter(e => e.siteId === site.id)
                     .reduce((sum, e) => sum + (parseInt(e.amount) || 0), 0);
+
                 const balance = siteIncome - siteExpense;
 
                 html += `
@@ -1421,7 +1512,15 @@
             container.innerHTML = html;
         };
 
+        // Fonction principale de calcul et d'affichage
         function calculateAndRenderAccounting() {
+            // S'assurer que les données sont chargées
+            if (!window.rooms || !window.paymentsLog || !window.expensesLog) {
+                // Si les données ne sont pas encore chargées, on réessaie plus tard
+                setTimeout(calculateAndRenderAccounting, 500);
+                return;
+            }
+
             let roomRevenues = 0;
             let menuRevenues = 0;
             let drinkRevenues = 0;
@@ -1639,6 +1738,7 @@
             const amountInput = document.getElementById('expense-amount');
             const catSelect = document.getElementById('expense-reason-category');
             const siteSelect = document.getElementById('expense-site');
+            const dateInput = document.getElementById('expense-date');
             
             let reason = "";
             if(catSelect.value === 'Salaire') {
@@ -1651,6 +1751,11 @@
             const type = typeSelect.value;
             const amount = parseInt(amountInput.value) || 0;
             const siteId = siteSelect.value || null;
+            // Récupérer la date saisie ou utiliser la date du jour par défaut
+            let expenseDate = dateInput.value;
+            if (!expenseDate) {
+                expenseDate = new Date().toISOString().split('T')[0];
+            }
 
             if (amount <= 0) {
                 alert("Le montant de la sortie doit être supérieur à 0 CFA.");
@@ -1699,7 +1804,14 @@
             // Vérification du solde du site si un site est sélectionné
             if (siteId) {
                 const siteIncome = window.paymentsLog
-                    .filter(p => p.siteId === siteId)
+                    .filter(p => {
+                        let effectiveSiteId = p.siteId;
+                        if (!effectiveSiteId && p.roomNumber && p.roomNumber !== 'Auxiliaire') {
+                            const room = window.rooms.find(r => r.number === p.roomNumber);
+                            if (room) effectiveSiteId = room.siteId;
+                        }
+                        return effectiveSiteId === siteId;
+                    })
                     .reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
                 const siteExpenses = window.expensesLog
                     .filter(e => e.siteId === siteId)
@@ -1713,7 +1825,7 @@
 
             const newExpense = {
                 id: 'exp_' + Date.now(),
-                date: new Date().toLocaleString('fr-FR'),
+                date: new Date(expenseDate).toLocaleString('fr-FR'), // Formatage lisible
                 timestamp: Date.now(),
                 type: type,
                 amount: amount,
@@ -1745,7 +1857,6 @@
                 let itemTime = p.id && p.id.includes('pay_') ? parseInt(p.id.split('_')[1]) : (p.date ? new Date(p.date).getTime() : Date.now());
                 let displayDate = p.date ? new Date(p.date).toLocaleString('fr-FR') : new Date().toLocaleString('fr-FR');
                 const isAuxiliary = p.type === 'auxiliaire';
-                const typeLabel = isAuxiliary ? 'Encaissement Auxiliaire' : 'Encaissement Hébergement';
                 const typeBadge = isAuxiliary 
                     ? `<span class="badge-aux">Auxiliaire</span>` 
                     : `<span class="badge-hebergement">Hébergement</span>`;
@@ -1753,10 +1864,15 @@
                     ? `${p.designation || 'Revenu auxiliaire'} - ${p.client || 'N/A'}`
                     : `Chambre ${p.roomNumber || 'N/A'} - Client : ${p.client || 'N/A'}`;
                 
-                // Récupérer le nom du site
+                // Récupérer le nom du site avec fallback
                 let siteName = 'N/A';
-                if (p.siteId) {
-                    const site = window.sites.find(s => s.id === p.siteId);
+                let effectiveSiteId = p.siteId;
+                if (!effectiveSiteId && p.roomNumber && p.roomNumber !== 'Auxiliaire') {
+                    const room = window.rooms.find(r => r.number === p.roomNumber);
+                    if (room) effectiveSiteId = room.siteId;
+                }
+                if (effectiveSiteId) {
+                    const site = window.sites.find(s => s.id === effectiveSiteId);
                     if (site) siteName = site.name;
                 }
                 
@@ -2026,8 +2142,13 @@
             const allTransactions = [
                 ...filteredPayments.map(p => {
                     let siteName = 'N/A';
-                    if (p.siteId) {
-                        const site = window.sites.find(s => s.id === p.siteId);
+                    let effectiveSiteId = p.siteId;
+                    if (!effectiveSiteId && p.roomNumber && p.roomNumber !== 'Auxiliaire') {
+                        const room = window.rooms.find(r => r.number === p.roomNumber);
+                        if (room) effectiveSiteId = room.siteId;
+                    }
+                    if (effectiveSiteId) {
+                        const site = window.sites.find(s => s.id === effectiveSiteId);
                         if (site) siteName = site.name;
                     }
                     return {
