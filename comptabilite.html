@@ -464,7 +464,7 @@
         }
         .site-card .site-stats {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
             margin-top: 8px;
         }
@@ -483,6 +483,10 @@
         .site-card .stat-item .stat-value {
             font-size: 0.85rem;
             font-weight: 800;
+        }
+        /* Ajustement pour les colonnes supplémentaires */
+        .site-card .stat-item.col-span-3 {
+            grid-column: span 3;
         }
     </style>
 </head>
@@ -1454,7 +1458,7 @@
             });
         }
 
-        // --- Mise à jour de la ventilation par site avec fallback sur la chambre ---
+        // --- Mise à jour de la ventilation par site avec les revenus auxiliaires ---
         window.updateSiteVentilation = function() {
             const container = document.getElementById('site-ventilation-container');
             if (!container) return;
@@ -1466,17 +1470,21 @@
 
             let html = '';
             window.sites.forEach(site => {
-                // Calcul des entrées (paiements) pour ce site avec fallback sur la chambre
+                // Calcul des entrées totales (hébergement + auxiliaires) pour ce site
                 const siteIncome = window.paymentsLog
                     .filter(p => {
                         let effectiveSiteId = p.siteId;
-                        // Si le paiement n'a pas de siteId, essayer de le récupérer via la chambre
                         if (!effectiveSiteId && p.roomNumber && p.roomNumber !== 'Auxiliaire') {
                             const room = window.rooms.find(r => r.number === p.roomNumber);
                             if (room) effectiveSiteId = room.siteId;
                         }
                         return effectiveSiteId === site.id;
                     })
+                    .reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
+
+                // Calcul des entrées auxiliaires pour ce site
+                const auxiliaryIncome = window.paymentsLog
+                    .filter(p => p.type === 'auxiliaire' && p.siteId === site.id)
                     .reduce((sum, p) => sum + (parseInt(p.amount) || 0), 0);
 
                 // Calcul des sorties (dépenses) pour ce site
@@ -1496,6 +1504,10 @@
                             <div class="stat-item">
                                 <div class="stat-label">Entrées</div>
                                 <div class="stat-value text-emerald-600">${siteIncome.toLocaleString()} CFA</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Auxiliaires</div>
+                                <div class="stat-value text-amber-600">${auxiliaryIncome.toLocaleString()} CFA</div>
                             </div>
                             <div class="stat-item">
                                 <div class="stat-label">Sorties</div>

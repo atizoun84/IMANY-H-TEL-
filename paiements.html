@@ -506,6 +506,13 @@
                         <option value="Virement">Virement Bancaire</option>
                     </select>
                 </div>
+                <!-- Nouveau champ : Site hôtelier -->
+                <div class="form-group">
+                    <label>Site hôtelier (optionnel)</label>
+                    <select id="aux-site" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 font-medium text-gray-800 focus:outline-none focus:border-whatsapp-teal">
+                        <option value="">-- Non spécifié --</option>
+                    </select>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-auxiliary-secondary" onclick="closeAuxiliaryModal()">Annuler</button>
@@ -613,6 +620,10 @@
             }
             // Rafraîchir l'historique pour mettre à jour les noms des sites
             window.renderPaymentsHistory();
+            // Mettre à jour le select des sites dans la modale auxiliaire
+            if (typeof window.populateAuxiliarySiteSelect === 'function') {
+                window.populateAuxiliarySiteSelect();
+            }
         });
 
         onValue(window.FirebaseBridge.roomsRef, (snapshot) => {
@@ -793,6 +804,23 @@
             });
         }
         window.populateRoomsSelect = populateRoomsSelect;
+
+        // Peupler le select des sites dans la modale auxiliaire
+        window.populateAuxiliarySiteSelect = function() {
+            const select = document.getElementById('aux-site');
+            if (!select) return;
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- Non spécifié --</option>';
+            window.sites.forEach(site => {
+                const opt = document.createElement('option');
+                opt.value = site.id;
+                opt.textContent = site.name;
+                select.appendChild(opt);
+            });
+            if (currentVal && window.sites.some(s => s.id === currentVal)) {
+                select.value = currentVal;
+            }
+        };
 
         function checkUrlParameters() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -1243,6 +1271,8 @@
             document.getElementById('aux-date').value = new Date().toISOString().split('T')[0];
             document.getElementById('aux-time').value = new Date().toTimeString().slice(0,5);
             document.getElementById('aux-designation').focus();
+            // Peupler le select des sites
+            populateAuxiliarySiteSelect();
         }
         window.openAuxiliaryModal = openAuxiliaryModal;
 
@@ -1258,6 +1288,7 @@
             const date = document.getElementById('aux-date').value;
             const time = document.getElementById('aux-time').value;
             const method = document.getElementById('aux-method').value;
+            const siteId = document.getElementById('aux-site').value || null; // Récupération du site
 
             if(!designation) {
                 alert("Veuillez renseigner une désignation.");
@@ -1287,7 +1318,7 @@
                 amount: amount,
                 type: 'auxiliaire',
                 designation: designation,
-                siteId: null // pas de site pour les auxiliaires
+                siteId: siteId // Ajout du siteId
             };
 
             window.paymentsLog.unshift({
@@ -1317,6 +1348,7 @@
             document.getElementById('aux-designation').value = '';
             document.getElementById('aux-amount').value = '';
             document.getElementById('aux-client').value = '';
+            document.getElementById('aux-site').value = '';
         }
         window.processAuxiliaryPayment = processAuxiliaryPayment;
 
